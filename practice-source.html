@@ -1,0 +1,910 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>활동지 실습 · 내 웹앱 만들기</title>
+<style>
+/* 페이지 기본 스타일. 공통 디자인(tools/lesson.css)이 이 층보다 우선합니다. */
+@layer base, page;
+@layer page{
+  :root{--code:#16203a;--code-ink:#dfe7ff}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);font:16px/1.7 system-ui,'Malgun Gothic','Apple SD Gothic Neo',sans-serif}
+  button,select,input,textarea{font:inherit}
+  button{cursor:pointer}
+  a{color:var(--brand)}
+  .wrap{margin:0 auto}
+  header.top{background:var(--card)}
+  header.top .wrap{display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .brand small{display:block}
+  .back{border:1px solid var(--line);color:var(--ink);font-weight:700;text-decoration:none;white-space:nowrap}
+  .head p{margin:0}
+  .sec-head{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+  .btn{background:var(--brand);padding:9px 14px}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  .tip{background:color-mix(in srgb,var(--ok) 12%,transparent);margin:0 0 18px}
+  .note{background:var(--warm-soft);margin:14px 0 0}
+  .actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+  /* 단계 표시 */
+  .stepper{position:sticky;top:0;z-index:5;background:color-mix(in srgb,var(--bg) 92%,transparent)}
+  .stepper ol{list-style:none;display:flex;margin:0;overflow-x:auto}
+  .stepper li{flex:1;min-width:150px}
+  .stepper button{width:100%;display:flex;align-items:center;gap:8px;background:var(--card);text-align:left;font-weight:700;line-height:1.3}
+  .stepper .num{flex:none;border-radius:50%;display:grid;place-items:center;font-weight:800}
+  .stepper button[aria-current="step"]{background:var(--brand-soft)}
+  .stepper button.done .num{background:var(--ok);color:#fff}
+  .stepnav{display:flex;justify-content:space-between;gap:12px}
+  .stepnav .btn:disabled{visibility:hidden}
+  /* 1. 옮겨 쓰기 */
+  .progress{display:flex;align-items:center;gap:12px;margin:6px 0 4px}
+  .bar{flex:1;height:10px;background:var(--line);overflow:hidden}
+  .bar i{display:block;height:100%;width:0;background:var(--ok);transition:width .2s}
+  .progress b{font:800 18px/1 ui-monospace,Consolas,monospace;white-space:nowrap}
+  .fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+  .field{background:var(--bg)}
+  .field.wide{grid-column:1 / -1}
+  .field label{display:flex;align-items:center;gap:8px;font-weight:800}
+  .field label .n{flex:none;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:var(--brand);font-size:15px}
+  .field .hint{margin:2px 0 6px;color:var(--muted)}
+  .field textarea{width:100%;min-height:64px;resize:vertical;border:1px solid var(--line);padding:8px 10px;color:var(--ink);line-height:1.6}
+  .field textarea:focus{outline:2px solid var(--brand);outline-offset:1px}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+  .chips button{background:var(--card);color:var(--ink);padding:2px 10px;font-weight:600}
+  .chips button:hover{border-color:var(--brand)}
+  .check{margin:6px 0 0;font-weight:600;min-height:1.5em}
+  .check.ok{color:var(--ok)}
+  .check.warn{color:#9a5b00}
+  .check.empty{color:var(--muted);font-weight:500}
+  /* 2. 프롬프트 */
+  .prompt-box{position:relative;background:var(--code);padding:16px;max-height:460px;overflow:auto;font:13.5px/1.65 ui-monospace,Consolas,'Malgun Gothic',monospace;white-space:pre-wrap;word-break:break-all}
+  .prompt-box .mine{background:#2f5bd355;border-radius:4px;color:#fff}
+  .prompt-box .blank{background:#c8463b88;border-radius:4px;color:#fff}
+  .parts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-bottom:14px}
+  .parts article{padding:12px 14px;background:var(--bg)}
+  .parts h3{margin:0 0 4px}
+  .parts p{margin:0}
+  .parts .tag{display:inline-block;font-size:12px;font-weight:800;padding:0 8px;margin-right:6px;color:#fff}
+  .missing{list-style:none;margin:0 0 12px;padding:0;display:flex;flex-wrap:wrap;gap:6px}
+  .missing li button{border:1px solid var(--danger);color:var(--danger);background:var(--card);border-radius:999px;padding:2px 10px;font-weight:700;font-size:13px}
+  .copied{color:var(--ok);font-weight:700}
+  /* 3. 만들고 저장 */
+  .flow{list-style:none;margin:0;padding:0;display:grid;gap:14px}
+  .flow>li{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:18px;align-items:center;padding:14px;background:var(--bg)}
+  .flow h3{margin:0 0 4px;display:flex;gap:8px;align-items:center}
+  .flow h3 .n{flex:none;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:var(--brand);font-size:15px}
+  .flow p{margin:0 0 6px}
+  .flow ul{margin:4px 0 0;padding-left:20px}
+  kbd{font:700 13px ui-monospace,Consolas,monospace;background:var(--card)}
+  .mock{background:var(--card);overflow:hidden}
+  .mock .bar-top{display:flex;align-items:center;gap:6px;padding:6px 10px;background:var(--line);font-weight:700}
+  .mock .bar-top i{width:9px;height:9px;border-radius:50%;background:var(--muted);opacity:.5}
+  .mock .body{padding:12px}
+  .mock .bubble{background:var(--brand-soft);border-radius:12px;padding:8px 10px;margin-left:30%;font-size:12.5px;color:var(--muted)}
+  .mock .codeblk{margin-top:10px;background:var(--code);color:var(--code-ink);border-radius:10px;padding:8px 10px;font:12px/1.5 ui-monospace,Consolas,monospace;position:relative}
+  .mock .codeblk .cp{position:absolute;right:6px;top:6px;background:#ffffff22;color:#fff;border-radius:6px;padding:0 6px;font:700 11px system-ui,sans-serif;outline:2px solid var(--warm)}
+  .mock .input{display:flex;gap:8px;align-items:center;border:2px solid var(--brand);border-radius:999px;padding:6px 6px 6px 12px;color:var(--muted)}
+  .mock .input b{margin-left:auto;width:28px;height:28px;border-radius:50%;background:var(--brand);color:#fff;display:grid;place-items:center}
+  .mock .row{display:grid;grid-template-columns:90px 1fr;gap:8px;align-items:center;margin:6px 0}
+  .mock .row span{color:var(--muted);text-align:right}
+  .mock .row div{border:1px solid var(--line);border-radius:6px;padding:3px 8px;background:var(--bg)}
+  .mock .row div.hl{border:2px solid var(--warm);background:var(--warm-soft);font-weight:800}
+  .mock .row div.dd::after{content:" ▾";float:right;color:var(--muted)}
+  .mock .save{display:flex;justify-content:flex-end;gap:6px;margin-top:8px}
+  .mock .save em{font-style:normal;border-radius:6px;padding:3px 14px;border:1px solid var(--line)}
+  .mock .save em:first-child{background:var(--brand);color:#fff;border-color:var(--brand)}
+  .mock .file{display:flex;align-items:center;gap:10px;padding:10px;border:2px dashed var(--line);border-radius:10px}
+  .mock .file .ic{width:34px;height:40px;border-radius:4px;background:linear-gradient(135deg,#2f5bd3,#24875a);color:#fff;display:grid;place-items:center;font:800 10px system-ui}
+  .mock .menu{margin:8px 0 0 40px;border:1px solid var(--line);border-radius:8px;padding:4px 0;width:max-content}
+  .mock .menu div{padding:2px 14px}
+  .mock .menu div.hl{background:var(--brand-soft);font-weight:800}
+  .shot{margin:0;overflow:hidden}
+  .shot img{display:block;width:100%;height:auto}
+  .alt{margin-top:14px}
+  .alt summary{font-weight:800;cursor:pointer}
+  .flow-alt{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:18px;align-items:center;margin-top:10px}
+  .flow-alt ol{margin:0;padding-left:20px}
+  .shots{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;align-items:start}
+  .namegen{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:8px}
+  .namegen code{font:800 16px ui-monospace,Consolas,monospace;background:var(--warm-soft);padding:2px 10px}
+  /* 4. 시험하고 고치기 */
+  .checklist{list-style:none;margin:0;padding:0;counter-reset:c}
+  .checklist li{display:flex;gap:10px;align-items:flex-start}
+  .checklist input{width:20px;height:20px;margin-top:4px;flex:none}
+  .checklist label{flex:1}
+  .checklist small{display:block;color:var(--muted)}
+  .checklist .grp{display:block;font-weight:800;border:0}
+  .fixes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+  .fix{padding:12px 14px;background:var(--bg);display:flex;flex-direction:column}
+  .fix h3{margin:0 0 4px}
+  .fix .who{align-self:flex-start;display:inline-block;font-weight:800;padding:0 8px;margin-bottom:6px;color:#fff;background:var(--muted)}
+  .fix .who.ai{background:var(--brand)}
+  .fix p{margin:0 0 8px}
+  .fix blockquote{margin:0 0 8px;padding:8px 10px;background:var(--card)}
+  .fix .btn{align-self:flex-start;margin-top:auto;padding:6px 12px;font-size:14px}
+  .done-box{padding:14px 16px;background:color-mix(in srgb,var(--ok) 10%,transparent);font-weight:700}
+  /* 5. 공유하고 설명하기 */
+  .shot.narrow{max-width:260px;justify-self:center;width:100%}
+  .titlein{display:block;font-weight:800;margin-bottom:4px}
+  .textin{width:100%;max-width:420px;border:1px solid var(--line);padding:8px 12px;background:var(--card);color:var(--ink);font-size:17px;font-weight:700}
+  .textin:focus{outline:2px solid var(--brand);outline-offset:1px}
+  .introcard{margin-top:14px;padding:20px;background:linear-gradient(135deg,var(--brand-soft),var(--warm-soft))}
+  .introcard h3{margin:0 0 4px;font-size:24px;letter-spacing:-.6px}
+  .introcard .ic-sub{margin:0 0 12px;color:var(--muted)}
+  .ic-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .ic-item{background:var(--card);border-radius:12px;padding:10px 12px;border:1px solid var(--line)}
+  .ic-item.wide{grid-column:1 / -1}
+  .ic-item b{display:block;font-size:12.5px;color:var(--brand);margin-bottom:2px}
+  .ic-item.empty{color:var(--muted);font-style:italic}
+  .ic-sensors{display:flex;flex-wrap:wrap;gap:6px}
+  .ic-sensors span{background:var(--brand);color:#fff;border-radius:999px;padding:1px 10px;font-weight:700;font-size:14px}
+  .ic-flow{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:center}
+  .ic-flow .arrow{font-size:22px;font-weight:900;color:var(--warm)}
+  dialog.present{border:0;padding:22px;width:min(1000px,96vw);max-height:94vh;background:var(--card);color:var(--ink)}
+  dialog.present::backdrop{background:#000b}
+  dialog.present .btn{float:right}
+  dialog.present .introcard{font-size:20px;margin-top:40px}
+  dialog.present .introcard h3{font-size:38px}
+  dialog.present .ic-item b{font-size:15px}
+  .talk{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+  .talk li{border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--bg);transition:.2s}
+  .talk li b{display:block;font-size:13px;color:var(--brand)}
+  .talk li strong{display:block;margin:2px 0 4px}
+  .talk li p{margin:0;font-size:14px;color:var(--muted)}
+  .talk li.now{border-color:var(--warm);background:var(--warm-soft);box-shadow:0 0 0 3px color-mix(in srgb,var(--warm) 40%,transparent)}
+  .talk li.now p{color:var(--ink)}
+  .timerbar{height:10px;background:var(--line);overflow:hidden;margin-top:12px}
+  .timerbar i{display:block;height:100%;width:0;background:var(--warm);transition:width .25s linear}
+  .talktime{font:800 20px/1 ui-monospace,Consolas,monospace;margin-left:auto}
+  .rotate{list-style:none;margin:0 0 12px;padding:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;counter-reset:r}
+  .rotate li{position:relative}
+  .rotate li:not(:last-child)::after{content:"→";position:absolute;right:-10px;top:50%;transform:translateY(-50%);color:var(--warm);font-weight:900;z-index:1}
+  .rotate b{display:inline-block;color:#fff;background:var(--brand);padding:0 8px}
+  .rotate strong{display:block;margin:4px 0 2px}
+  .hint-line{margin:0 0 8px}
+  .peers{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+  .peer{padding:12px;background:var(--bg)}
+  .peer h3{margin:0 0 6px}
+  .peer label{display:block;font-weight:700;margin-top:6px}
+  .peer input,.peer textarea{width:100%;border:1px solid var(--line);padding:6px 8px;background:var(--card);color:var(--ink)}
+  .peer textarea{min-height:52px;resize:vertical}
+  .bigcheck{display:flex;gap:10px;align-items:center;font-weight:800;margin-top:16px;padding:12px 14px}
+  .bigcheck input{width:22px;height:22px;accent-color:var(--ok)}
+  /* 6. 느낀 점 */
+  .stars-wrap{display:flex;align-items:center;gap:12px;margin-top:14px;font-weight:800}
+  .stars{display:flex;gap:4px}
+  .stars button{border:0;background:none;line-height:1}
+  .stars button.on{color:var(--warm)}
+  .prompt-box.light{background:var(--bg);font-family:system-ui,'Malgun Gothic',sans-serif}
+  ol.plain{margin:0;padding-left:20px}
+  ol.plain li{margin:4px 0}
+  @media (max-width:760px){
+    .talk,.peers,.ic-grid,.rotate{grid-template-columns:1fr}
+    .rotate li:not(:last-child)::after{content:"↓";right:auto;left:50%;top:auto;bottom:-14px;transform:translateX(-50%)}
+    .ic-flow{grid-template-columns:1fr}
+    .ic-flow .arrow{transform:rotate(90deg);justify-self:center}
+    .fields,.parts,.fixes,.flow-alt,.shots{grid-template-columns:1fr}
+    .flow>li{grid-template-columns:1fr}
+  }
+}
+</style>
+<!-- LESSON:CSS -->
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <div class="brand">마이크로비트 웹앱 연결 실험실<small>3단계 활동지 실습 · 내 웹앱 만들기</small></div>
+  <a class="back" href="index.html#stage2">← 2단계로 돌아가기</a>
+</div></header>
+
+<nav class="stepper" aria-label="활동지 실습 순서"><div class="wrap"><ol>
+  <li><button type="button" data-step-go="1"><span class="num">1</span><span class="label">활동지 옮겨 쓰기</span></button></li>
+  <li><button type="button" data-step-go="2"><span class="num">2</span><span class="label">프롬프트 완성</span></button></li>
+  <li><button type="button" data-step-go="3"><span class="num">3</span><span class="label">만들고 저장하기</span></button></li>
+  <li><button type="button" data-step-go="4"><span class="num">4</span><span class="label">시험하고 고치기</span></button></li>
+  <li><button type="button" data-step-go="5"><span class="num">5</span><span class="label">공유·설명하기</span></button></li>
+  <li><button type="button" data-step-go="6"><span class="num">6</span><span class="label">느낀 점 나누기</span></button></li>
+</ol></div></nav>
+
+<main class="wrap">
+<!-- 1. 활동지 옮겨 쓰기 -->
+<div data-step="1">
+  <section class="head">
+    <h1>종이 활동지의 ①~⑧을 그대로 옮겨 적어요</h1>
+    <p>활동지 3번 칸에 쓴 내용을 번호에 맞춰 적어요. 칸 아래의 확인 문장이 초록색이면 제미나이가 알아듣기 좋은 문장이에요.</p>
+  </section>
+  <section class="card">
+    <div class="sec-head"><h2>내 발명품 [A]</h2><span class="saved" id="savedNote">쓴 내용은 이 컴퓨터에만 저장돼요</span></div>
+    <div class="progress"><div class="bar"><i id="fillBar"></i></div><b id="fillCount">0 / 8</b></div>
+    <div class="fields" id="fields"></div>
+    <div class="actions" style="margin-top:14px">
+      <button type="button" class="btn ghost" id="exampleBtn">예시(밤길 등불) 보기</button>
+      <button type="button" class="btn ghost" id="clearBtn">모두 지우기</button>
+    </div>
+    <div class="note" id="exampleBox" hidden></div>
+  </section>
+  <p class="tip">프롬프트에는 이름·학번 같은 개인정보를 쓰지 않아요. 발명품 이야기만 적어요.</p>
+</div>
+
+<!-- 2. 프롬프트 완성 -->
+<div data-step="2" hidden>
+  <section class="head">
+    <h1>[A] 내 발명품 + [B] 제작 규칙을 한 번에 복사해요</h1>
+    <p>[A]는 내가 쓴 부분, [B]는 마이크로비트와 통신하는 약속이에요. [B]는 고치지 않고 그대로 보내야 웹앱이 장치와 연결돼요.</p>
+  </section>
+  <section class="card">
+    <div class="sec-head"><h2>완성된 프롬프트</h2><span id="promptLen"></span></div>
+    <div id="missingWrap" hidden>
+      <p class="note" style="margin:0 0 8px">빈 칸이 있어요. 눌러서 채우고 오세요. 비워 두면 제미나이가 마음대로 정해요.</p>
+      <ul class="missing" id="missing"></ul>
+    </div>
+    <pre class="prompt-box" id="promptBox" tabindex="0" aria-label="완성된 프롬프트"></pre>
+    <div class="actions" style="margin-top:12px">
+      <button type="button" class="btn" id="copyBtn">프롬프트 전체 복사</button>
+      <span class="copied" id="copyNote" role="status"></span>
+    </div>
+    <div class="parts" style="margin-top:32px">
+      <article><h3><span class="tag" style="background:var(--brand)">A</span>내 발명품</h3><p>①~⑧ 내가 옮겨 적은 내용. 위 상자에서 노란색으로 보여요.</p></article>
+      <article><h3><span class="tag" style="background:var(--muted)">B</span>제작 규칙</h3><p>통신 규칙, 센서 대시보드, 연결 처리, 두 가지 모드, 버튼 오류 방지.</p></article>
+    </div>
+  </section>
+</div>
+
+<!-- 3. 만들고 저장하기 -->
+<div data-step="3" hidden>
+  <section class="head">
+    <h1>제미나이로 만들고 파일로 받아요</h1>
+    <p>실제 수업 화면으로 따라 해요. 메모장 없이 제미나이에서 바로 HTML 파일을 내려받을 수 있어요.</p>
+  </section>
+  <section class="card">
+    <ol class="flow">
+      <li>
+        <div>
+          <h3><span class="n">1</span>제미나이에 붙여넣고 보내요</h3>
+          <p><b>새 채팅</b>을 열고 입력창에 <kbd>Ctrl</kbd> + <kbd>V</kbd>로 붙여넣어요. 오른쪽 아래가 <b>Pro</b>인지 확인하고 ↑ 버튼을 눌러요.</p>
+          <ul><li>답이 끝날 때까지 기다려요. 중간에 멈추면 4단계의 「코드가 중간에 끊겨요」 문장을 보내요.</li></ul>
+        </div>
+        <figure class="shot"><img src="images/gm-1-paste.webp" alt="제미나이 입력창에 프롬프트를 붙여넣은 화면"><figcaption>프롬프트를 붙여넣은 입력창</figcaption></figure>
+      </li>
+      <li>
+        <div>
+          <h3><span class="n">2</span>미리보기로 확인하고 「코드 다운로드」</h3>
+          <p>코드 창 위쪽의 <b>미리보기</b>를 눌러 화면이 나오는지 먼저 봐요. 그다음 <b>내보내기 → 코드 다운로드</b>를 눌러요.</p>
+          <ul>
+            <li>파일은 <b>다운로드</b> 폴더에 <code>.html</code> 파일로 저장돼요.</li>
+            <li>설명이 영어로 나와도 괜찮아요. 화면 글자가 한국어인지 확인해요.</li>
+          </ul>
+        </div>
+        <figure class="shot"><img src="images/gm-2-export.webp" alt="제미나이 코드 창의 미리보기와 내보내기 메뉴의 코드 다운로드"><figcaption>미리보기 → 내보내기 → 코드 다운로드</figcaption></figure>
+      </li>
+      <li>
+        <div>
+          <h3><span class="n">3</span>파일 이름을 작품제목_이름으로 바꿔요</h3>
+          <p>다운로드 폴더에서 파일을 한 번 누르고 <kbd>F2</kbd>를 눌러 이름을 바꿔요.</p>
+          <ul>
+            <li>작품 제목은 <b>띄어쓰기 없이</b> 써요. 예: 안전한 밤길 등불 → 밤길등불</li>
+            <li>이름 부분만 바꾸고 끝의 <b>.html은 그대로</b> 둬요.</li>
+            <li>확장자가 안 보이면 「.html」을 새로 붙이지 말고 이름만 바꿔요. 붙이면 <code>.html.html</code>이 돼요.</li>
+          </ul>
+          <div class="namegen">예: <code>micro_bit_safety_system.html</code> → <code>밤길등불_홍길동.html</code></div>
+        </div>
+        <div class="mock" data-ui aria-hidden="true">
+          <div class="bar-top"><i></i><i></i><i></i>파일 탐색기 · 다운로드</div>
+          <div class="body">
+            <div class="file"><span class="ic">HTML</span><div><b style="outline:2px solid var(--warm);border-radius:4px;padding:0 4px">밤길등불_홍길동.html</b><br><small style="color:var(--muted)">F2로 이름 바꾸기</small></div></div>
+          </div>
+        </div>
+      </li>
+      <li>
+        <div>
+          <h3><span class="n">4</span>크롬으로 열어요</h3>
+          <p>파일을 <b>오른쪽 클릭 → 연결 프로그램 → Google Chrome</b>으로 열어요. 파일을 크롬 창으로 끌어다 놓아도 돼요.</p>
+          <ul><li>주소창이 <code>file:///…/밤길등불_홍길동.html</code>로 바뀌면 성공이에요.</li></ul>
+        </div>
+        <div class="mock" data-ui aria-hidden="true">
+          <div class="bar-top"><i></i><i></i><i></i>파일 탐색기</div>
+          <div class="body">
+            <div class="file"><span class="ic">HTML</span><div><b>밤길등불_홍길동.html</b><br><small style="color:var(--muted)">Chrome HTML Document</small></div></div>
+            <div class="menu"><div>열기</div><div class="hl">연결 프로그램 ▸ Google Chrome</div><div>이름 바꾸기</div></div>
+          </div>
+        </div>
+      </li>
+    </ol>
+    <details class="alt">
+      <summary>「내보내기」 버튼이 없을 때 · 메모장으로 저장하기</summary>
+      <div class="flow-alt">
+        <div>
+          <ol>
+            <li>답에 나온 코드 상자의 <b>복사</b> 아이콘을 눌러요. 코드가 <code>&lt;!DOCTYPE html&gt;</code>로 시작해 <code>&lt;/html&gt;</code>로 끝나는지 확인해요.</li>
+            <li>메모장에 <kbd>Ctrl</kbd> + <kbd>V</kbd>로 붙여넣고 <b>파일 → 다른 이름으로 저장</b>을 눌러요. (<kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>S</kbd>)</li>
+          </ol>
+        </div>
+        <figure class="shot"><img src="images/np-1-menu.webp" alt="메모장 파일 메뉴의 다른 이름으로 저장"><figcaption>파일 → 다른 이름으로 저장</figcaption></figure>
+      </div>
+      <div class="flow-alt">
+        <div>
+          <ol start="3">
+            <li><b>파일 이름</b>: 작품제목_이름.html (띄어쓰기 없이, 끝에 .html을 꼭 붙여요)</li>
+            <li><b>파일 형식</b>: 모든 파일 (*.*)</li>
+            <li><b>인코딩</b>: UTF-8 (오른쪽 아래)</li>
+            <li><b>저장</b>을 눌러요.</li>
+          </ol>
+        </div>
+        <figure class="shot"><img src="images/np-2-save.webp" alt="다른 이름으로 저장 창의 파일 이름, 파일 형식, 인코딩"><figcaption>파일 이름 · 파일 형식 · 인코딩 세 곳을 확인</figcaption></figure>
+      </div>
+    </details>
+  </section>
+  <div class="card">
+    <label style="display:flex;gap:10px;align-items:center;font-weight:700"><input type="checkbox" id="savedCheck" style="width:20px;height:20px;accent-color:var(--ok)"> 크롬에서 내 웹앱 화면이 열렸어요</label>
+  </div>
+</div>
+
+<!-- 4. 시험하고 고치기 -->
+<div data-step="4" hidden>
+  <section class="head">
+    <h1>체험 모드 → 실제 장치 순서로 시험해요</h1>
+    <p>하나씩 확인하고 체크해요. 안 되는 것이 있으면 아래 「이럴 땐 이렇게」에서 맞는 문장을 복사해 제미나이에 보내요.</p>
+  </section>
+  <section class="card">
+    <div class="sec-head"><h2>실제 장치로 연결하면 이렇게 보여요</h2><span>실제 수업 화면</span></div>
+    <div class="shots">
+      <figure class="shot"><img src="images/gm-4-port.webp" alt="USB 연결 버튼을 누르면 나오는 시리얼 포트 선택 창"><figcaption>USB 연결 → 목록에서 <b>BBC micro:bit CMSIS-DAP</b>을 고르고 「연결」</figcaption></figure>
+      <figure class="shot"><img src="images/gm-5-dashboard.webp" alt="실제 센서값이 들어온 센서 대시보드"><figcaption>센서 숫자와 그래프가 움직이면 연결 성공</figcaption></figure>
+    </div>
+    <p class="note">목록에 블루투스·이어폰(JL_SPP, QCY 등)도 보여요. 꼭 <b>micro:bit</b>이 들어간 항목을 골라요.</p>
+  </section>
+  <section class="card">
+    <div class="sec-head"><h2>시험 순서</h2><span id="checkCount">0 / 0</span></div>
+    <ul class="checklist" id="checklist"></ul>
+    <div class="done-box" id="allDone" hidden style="margin-top:14px">모두 확인했어요! 실제 장치로 시험하지 못한 것은 활동지에 「미확인」으로 적고, 5단계에서 발표를 준비해요.</div>
+  </section>
+  <section class="card">
+    <div class="sec-head"><h2>이럴 땐 이렇게</h2><span>한 번에 하나씩 고쳐요</span></div>
+    <div class="fixes" id="fixes"></div>
+    <p class="note">제미나이가 고친 코드를 주면 <b>전체 코드</b>를 다시 복사해, 같은 파일 이름으로 덮어 저장하고 크롬에서 <kbd>F5</kbd>로 새로고침해요.</p>
+  </section>
+</div>
+
+<!-- 5. 공유하고 설명하기 -->
+<div data-step="5" hidden>
+  <section class="head">
+    <h1>작품 카드로 소개하고, 조원 작품도 체험해요</h1>
+    <p>1단계에 쓴 ①~⑧로 작품 소개 카드가 저절로 만들어져요. 카드를 보며 1분 동안 발표하고, 클래스룸에 HTML 파일을 제출해요.</p>
+  </section>
+
+  <section class="card">
+    <div class="sec-head"><h2>5-1 작품 소개 카드</h2><span>①~⑧이 바뀌면 카드도 바뀌어요</span></div>
+    <label class="titlein" for="workTitle">작품 이름</label>
+    <input id="workTitle" class="textin" maxlength="30" placeholder="예: 안전한 밤길 등불">
+    <div id="introCard" class="introcard" aria-live="polite"></div>
+    <div class="actions" style="margin-top:12px">
+      <button type="button" class="btn" id="cardBig">발표 화면으로 크게 보기</button>
+      <button type="button" class="btn ghost" id="cardCopy">카드 글 복사</button>
+      <span class="copied" id="cardNote" role="status"></span>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="sec-head"><h2>5-2 1분 발표 순서</h2><span>15초씩 네 부분</span></div>
+    <ol class="talk" id="talk"></ol>
+    <div class="timerbar"><i id="talkBar"></i></div>
+    <div class="actions" style="margin-top:10px">
+      <button type="button" class="btn" id="talkStart">1분 연습 시작</button>
+      <button type="button" class="btn ghost" id="talkReset">처음부터</button>
+      <b class="talktime" id="talkTime">60초</b>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="sec-head"><h2>5-3 조원끼리 돌아보기</h2><span>4명 · 한 사람당 약 4분</span></div>
+    <p style="margin-top:0">조원 4명이 한 사람씩 차례로 발표자가 돼요. 발표자의 노트북에 웹앱과 장치를 켜 두고, 나머지 3명이 직접 체험하며 이야기 나눠요.</p>
+    <ol class="rotate">
+      <li><b>1분</b><strong>발표자 소개</strong><span>5-2 순서대로 작품 카드를 보여 주며 설명해요.</span></li>
+      <li><b>2분</b><strong>조원 체험</strong><span>조원이 직접 센서를 가리고, 흔들고, 버튼을 눌러 봐요.</span></li>
+      <li><b>1분</b><strong>칭찬·제안 나누기</strong><span>조원마다 칭찬 1개, 제안 1개를 말로 전해요.</span></li>
+      <li><b>다음</b><strong>발표자 바꾸기</strong><span>시계 방향으로 다음 사람이 발표자가 돼요.</span></li>
+    </ol>
+    <p class="hint-line">내가 체험한 조원 3명의 작품을 아래에 적어 두면 6단계 느낀 점에 쓸 수 있어요.</p>
+    <div class="peers" id="peers"></div>
+    <p class="note">「제안」은 고칠 점을 콕 집어 친절하게 적어요. 예: “버튼을 누르면 소리도 나면 더 잘 알 것 같아요.”</p>
+  </section>
+
+  <section class="card">
+    <div class="sec-head"><h2>5-4 구글 클래스룸에 제출하기</h2><span>과제: html 결과물 제출하기</span></div>
+    <ol class="flow">
+      <li>
+        <div>
+          <h3><span class="n">1</span>과제를 열고 「추가 또는 만들기」</h3>
+          <p>클래스룸에서 <b>html 결과물 제출하기</b> 과제를 열어요. 오른쪽 <b>내 과제</b> 칸의 <b>+ 추가 또는 만들기</b>를 눌러요.</p>
+        </div>
+        <figure class="shot narrow"><img src="images/cr-1-task.webp" alt="클래스룸 내 과제 칸의 추가 또는 만들기 버튼"><figcaption>내 과제 → + 추가 또는 만들기</figcaption></figure>
+      </li>
+      <li>
+        <div>
+          <h3><span class="n">2</span>「파일」을 골라요</h3>
+          <p>메뉴에서 <b>파일</b>을 눌러요. Docs·Slides처럼 새로 만드는 것은 고르지 않아요.</p>
+        </div>
+        <figure class="shot narrow"><img src="images/cr-2-menu.webp" alt="추가 또는 만들기 메뉴의 파일 항목"><figcaption>Google Drive · 링크 · <b>파일</b></figcaption></figure>
+      </li>
+      <li>
+        <div>
+          <h3><span class="n">3</span>내 HTML 파일을 올려요</h3>
+          <p><b>업로드</b> 탭에서 내 HTML 파일을 끌어다 놓거나 「찾아보기」로 골라요. 막대가 끝까지 차면 내 과제에 파일이 붙어요.</p>
+          <ul><li>다운로드 폴더에 있는 <b>이름을 바꾼 파일</b>을 골라요.</li></ul>
+        </div>
+        <figure class="shot"><img src="images/cr-3-upload.webp" alt="Google Drive로 파일 삽입하기 창에서 HTML 파일을 업로드하는 모습"><figcaption>업로드 탭에서 파일 올리기</figcaption></figure>
+      </li>
+      <li>
+        <div>
+          <h3><span class="n">4</span>「제출」을 눌러요</h3>
+          <p>파일이 붙으면 「완료로 표시」 버튼이 <b>「제출」</b>로 바뀌어요. 누르고, 확인 창에서 한 번 더 <b>제출</b>을 눌러요.</p>
+          <ul><li>제출한 뒤에 고쳤다면 「제출 취소」 → 파일 바꾸기 → 다시 제출해요.</li></ul>
+        </div>
+        <div class="mock" data-ui aria-hidden="true">
+          <div class="bar-top"><i></i><i></i><i></i>내 과제</div>
+          <div class="body">
+            <div class="file"><span class="ic">HTML</span><div><b>내 HTML 파일</b><br><small style="color:var(--muted)">HTML</small></div></div>
+            <div style="margin-top:10px;text-align:center;background:var(--brand);color:#fff;border-radius:999px;padding:6px;font-weight:800;outline:3px solid var(--warm)">제출</div>
+          </div>
+        </div>
+      </li>
+    </ol>
+    <label class="bigcheck"><input type="checkbox" id="submitCheck"> 클래스룸에 HTML 파일을 제출했어요</label>
+  </section>
+</div>
+
+<!-- 6. 느낀 점 나누기 -->
+<div data-step="6" hidden>
+  <section class="head">
+    <h1>오늘 배운 점과 느낀 점을 투닝 AI에 올려요</h1>
+    <p>질문에 답하면 투닝 AI에 올릴 글이 한 덩어리로 만들어져요. 복사해서 선생님이 알려준 곳에 붙여넣어요.</p>
+  </section>
+  <section class="card">
+    <div class="sec-head"><h2>돌아보기 질문</h2><span>짧아도 괜찮아요. 내 말로 적어요</span></div>
+    <div class="fields" id="reflFields"></div>
+    <div class="stars-wrap">
+      <span>오늘 수업 만족도</span>
+      <div class="stars" id="stars" role="radiogroup" aria-label="오늘 수업 만족도"></div>
+    </div>
+  </section>
+  <section class="card">
+    <div class="sec-head"><h2>투닝 AI에 올릴 글</h2><span id="reflLen"></span></div>
+    <div class="prompt-box light" id="reflBox"></div>
+    <div class="actions" style="margin-top:12px">
+      <button type="button" class="btn" id="reflCopy">글 전체 복사</button>
+      <span class="copied" id="reflNote" role="status"></span>
+    </div>
+  </section>
+  <section class="card">
+    <div class="sec-head"><h2>투닝 AI에 올리는 방법</h2></div>
+    <ol class="flow">
+      <li>
+        <div>
+          <ol class="plain">
+            <li>선생님이 알려준 <b>투닝 AI</b> 주소로 들어가요.</li>
+            <li>느낀 점을 올리는 곳을 열고, 글 쓰는 칸을 눌러요.</li>
+            <li>위에서 복사한 글을 <kbd>Ctrl</kbd> + <kbd>V</kbd>로 붙여넣어요. 제목이 있으면 <b>작품 이름</b>을 써요.</li>
+            <li>올리기를 누르고, 친구들이 올린 글도 읽어 봐요.</li>
+          </ol>
+        </div>
+      </li>
+    </ol>
+    <div class="done-box" id="finalBox" hidden style="margin-top:14px">수고했어요! 센서값을 보내는 장치와, 그 값을 보고 판단하는 웹앱을 내 손으로 연결했어요.</div>
+  </section>
+</div>
+
+<dialog class="present" id="cardDlg" aria-label="작품 소개 카드 크게 보기">
+  <button type="button" class="btn ghost" id="cardDlgClose">닫기</button>
+  <div id="cardDlgBody"></div>
+</dialog>
+
+<nav class="stepnav" aria-label="이전 다음 단계">
+  <button type="button" class="btn ghost" id="prevStep">← 이전</button>
+  <button type="button" class="btn" id="nextStep">다음 →</button>
+</nav>
+</main>
+<footer>마이크로비트 웹앱 연결 실험실 · 활동지 실습</footer>
+
+<!-- PROMPT:START (빌드할 때 프롬프트_기본HTML없음.md 내용이 여기에 들어갑니다) -->
+<!-- PROMPT:END -->
+
+<script>
+const $ = id => document.getElementById(id);
+const P = JSON.parse($('promptData').textContent);  // {intro, fields:[{n,label,hint,example}], rules}
+
+/* 저장 (이 브라우저에만) */
+const KEY = 'connectlab-practice-v1';
+let saved = {};
+try { saved = JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch { saved = {}; }
+function save() {
+  try { localStorage.setItem(KEY, JSON.stringify(saved)); $('savedNote').textContent = '쓴 내용은 이 컴퓨터에만 저장돼요 · 저장됨'; }
+  catch { $('savedNote').textContent = '이 브라우저에서는 저장이 안 돼요. 창을 닫기 전에 복사해 두세요.'; }
+}
+
+/* 칸마다 도움 단추와 확인 규칙 */
+const SENSORS = ['거리', '흔들림', '밝기', '온도', 'A 버튼', 'B 버튼', '기울기'];
+const NOT_SUPPORTED = ['소리', '마이크', '습도', '터치', '로고', '나침반', '자기', '자석', '심박', '가스', '토양', '적외선', '라디오'];
+const CHIPS = {
+  '③': SENSORS,
+  '④': ['밝기가 50보다 어두워지면', '거리가 15cm보다 가까우면', '흔들림이 500보다 크면', '앞으로 20도 이상 기울면', 'A 버튼을 누르면', '온도가 28도보다 높으면'],
+  '⑤': ['서보모터 90도', '네오픽셀 6개 모두 빨간색', '네오픽셀 무지개색', '무지개색을 회전', '1번 LED만 파란색', '네오픽셀 밝기 80'],
+  '⑦': ['밝기가 80보다 밝아지면', '거리가 25cm보다 멀어지면', '버튼을 떼면', '서보 0도', '네오픽셀 끄기'],
+  '⑧': ['세로형', '밝고 귀여운 분위기', '어두운 배경에 형광색', '파스텔 색'],
+};
+const has = (t, words) => words.some(w => t.includes(w));
+const CHECKS = {
+  '③': t => {
+    const bad = NOT_SUPPORTED.filter(w => t.includes(w));
+    if (bad.length) return ['warn', `공통 코드에는 「${bad.join('·')}」 값이 없어요. ${SENSORS.join('·')} 중에서 골라요.`];
+    if (!has(t, ['거리', '흔들', '밝기', '빛', '온도', '버튼', '기울', '초음파'])) return ['warn', `${SENSORS.join('·')} 중에서 골라 적어요.`];
+    return ['ok', '좋아요. 공통 코드가 보내는 센서예요.'];
+  },
+  '④': t => /\d/.test(t) || has(t, ['버튼', '누르']) ? ['ok', '좋아요. 언제 작동하는지 분명해요.'] : ['warn', '「50보다」, 「15cm보다」처럼 숫자를 넣거나 버튼으로 정하면 더 정확해요.'],
+  '⑤': t => {
+    const ang = [...t.matchAll(/(\d+)\s*도/g)].map(m => Number(m[1])).filter(n => n > 180);
+    if (ang.length && has(t, ['서보'])) return ['warn', '서보모터는 0~180도까지만 움직여요.'];
+    if (/([7-9]|\d{2,})\s*번/.test(t) && has(t, ['LED', '엘이디', '네오', '픽셀'])) return ['warn', '네오픽셀은 6개예요. 번호는 0~5번(또는 1~6번째)으로 적어요.'];
+    return has(t, ['서보', '네오', '픽셀', 'LED', '엘이디', '불', '색', '무지개']) ? ['ok', '좋아요. 장치가 할 일이 보여요.'] : ['warn', '서보모터나 네오픽셀이 어떻게 움직이는지 적어요.'];
+  },
+  '⑦': t => /\d/.test(t) || has(t, ['떼', '버튼', '다시', '꺼', '끄', '0도']) ? ['ok', '좋아요. 원래대로 돌아오는 방법이 있어요.'] : ['warn', '언제, 어떤 모습으로 돌아오는지 적어요. (예: 80보다 밝아지면 끄기)'],
+};
+const defaultCheck = t => t.length < 4 ? ['warn', '조금 더 자세히 적어요.'] : ['ok', '좋아요.'];
+
+const boxes = {};
+P.fields.forEach((f, i) => {
+  const d = document.createElement('div'); d.className = 'field' + (f.n === '①' || f.n === '④' || f.n === '⑤' ? ' wide' : '');
+  const id = 'f' + (i + 1);
+  d.innerHTML = `<label for="${id}"><span class="n"></span><span class="t"></span></label><p class="hint"></p><textarea id="${id}" rows="2"></textarea><div class="chips"></div><p class="check" aria-live="polite"></p>`;
+  d.querySelector('.n').textContent = f.n; d.querySelector('.t').textContent = f.label;
+  d.querySelector('.hint').textContent = f.hint || '';
+  if (!f.hint) d.querySelector('.hint').remove();
+  const ta = d.querySelector('textarea'); ta.value = saved[f.n] || '';
+  ta.placeholder = '활동지에 쓴 내용을 옮겨 적어요';
+  (CHIPS[f.n] || []).forEach(c => {
+    const b = document.createElement('button'); b.type = 'button'; b.textContent = '+ ' + c;
+    b.addEventListener('click', () => {
+      const v = ta.value.trim(); ta.value = v ? (v.endsWith(',') ? v + ' ' : v + ', ') + c : c;
+      ta.dispatchEvent(new Event('input')); ta.focus();
+    });
+    d.querySelector('.chips').append(b);
+  });
+  if (!CHIPS[f.n]) d.querySelector('.chips').remove();
+  ta.addEventListener('input', () => { saved[f.n] = ta.value; save(); renderChecks(); });
+  boxes[f.n] = {ta, check: d.querySelector('.check')};
+  $('fields').append(d);
+});
+
+function filled() { return P.fields.filter(f => (saved[f.n] || '').trim()); }
+function renderChecks() {
+  P.fields.forEach(f => {
+    const t = (saved[f.n] || '').trim(), el = boxes[f.n].check;
+    const [tone, msg] = t ? (CHECKS[f.n] || defaultCheck)(t) : ['empty', '아직 비어 있어요.'];
+    el.className = 'check ' + tone; el.textContent = (tone === 'ok' ? '✓ ' : tone === 'warn' ? '! ' : '') + msg;
+  });
+  const n = filled().length;
+  $('fillCount').textContent = `${n} / ${P.fields.length}`;
+  $('fillBar').style.width = (n / P.fields.length * 100) + '%';
+  updateStepper();
+}
+
+$('exampleBtn').addEventListener('click', () => {
+  const box = $('exampleBox'); box.hidden = !box.hidden;
+  $('exampleBtn').textContent = box.hidden ? '예시(밤길 등불) 보기' : '예시 닫기';
+  if (!box.innerHTML) {
+    box.innerHTML = '<b>작성 예시 · 안전한 밤길 등불</b>';
+    P.fields.forEach(f => { const p = document.createElement('div'); p.textContent = `${f.n} ${f.label}: ${f.example || ''}`; box.append(p); });
+  }
+});
+$('clearBtn').addEventListener('click', () => {
+  if (!confirm('①~⑧에 쓴 내용을 모두 지울까요?')) return;
+  P.fields.forEach(f => { saved[f.n] = ''; boxes[f.n].ta.value = ''; });
+  save(); renderChecks();
+});
+
+/* 2. 프롬프트 만들기 */
+function buildPrompt() {
+  const a = P.fields.map(f => `${f.n} ${f.label}: ${(saved[f.n] || '').trim().replace(/\s*\n\s*/g, ' ')}`).join('\n');
+  return `${P.intro}\n\n${a}\n\n${P.rules}`;
+}
+let copiedOnce = false;
+function renderPrompt() {
+  const box = $('promptBox'); box.replaceChildren();
+  box.append(P.intro + '\n\n');
+  P.fields.forEach(f => {
+    const v = (saved[f.n] || '').trim().replace(/\s*\n\s*/g, ' ');
+    box.append(`${f.n} ${f.label}: `);
+    const s = document.createElement('span'); s.className = v ? 'mine' : 'blank'; s.textContent = v || '(비어 있음)';
+    box.append(s, '\n');
+  });
+  box.append('\n' + P.rules);
+  const miss = P.fields.filter(f => !(saved[f.n] || '').trim());
+  $('missingWrap').hidden = !miss.length; $('missing').replaceChildren();
+  miss.forEach(f => {
+    const li = document.createElement('li'), b = document.createElement('button'); b.type = 'button';
+    b.textContent = `${f.n} ${f.label}`;
+    b.addEventListener('click', () => { goStep(1); boxes[f.n].ta.focus(); boxes[f.n].ta.scrollIntoView({block: 'center'}); });
+    li.append(b); $('missing').append(li);
+  });
+  $('promptLen').textContent = `${buildPrompt().length.toLocaleString()}자`;
+  $('copyNote').textContent = '';
+}
+async function copyText(text) {
+  try { await navigator.clipboard.writeText(text); return true; }
+  catch {
+    const ta = document.createElement('textarea'); ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.append(ta); ta.select();
+    let ok = false; try { ok = document.execCommand('copy'); } catch {}
+    ta.remove(); return ok;
+  }
+}
+$('copyBtn').addEventListener('click', async () => {
+  const ok = await copyText(buildPrompt());
+  $('copyNote').textContent = ok ? '복사했어요! 3단계로 가서 제미나이에 붙여넣어요.' : '복사가 안 돼요. 상자를 누르고 Ctrl+A, Ctrl+C로 복사해요.';
+  if (ok) { copiedOnce = true; updateStepper(); window.Sound && Sound.ok(); }
+});
+$('promptBox').addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'a') {
+    e.preventDefault(); const r = document.createRange(); r.selectNodeContents($('promptBox'));
+    const s = getSelection(); s.removeAllRanges(); s.addRange(r);
+  }
+});
+
+/* 3. 저장 확인 */
+$('savedCheck').checked = !!saved.__opened;
+$('savedCheck').addEventListener('change', e => { saved.__opened = e.target.checked; save(); updateStepper(); });
+
+/* 4. 시험 순서 */
+const CHECKLIST = [
+  {g: '화면 체험 모드 (USB 없이)'},
+  {id: 'c1', t: '센서 카드 8개와 네오픽셀 동그라미 6개가 보여요'},
+  {id: 'c2', t: '슬라이더로 ④ 조건을 만들면 화면과 네오픽셀 그림이 바뀌어요'},
+  {id: 'c3', t: '⑦ 조건을 만들면 원래대로 돌아와요'},
+  {g: '실제 장치 모드'},
+  {id: 'c4', t: '메이크코드 탭을 닫았어요', s: '열려 있으면 숫자가 깨져요. 2-3에서 배운 내용이에요.'},
+  {id: 'c5', t: 'USB 연결 → BBC micro:bit 고르기 → 연결됐다는 표시가 보여요'},
+  {id: 'c6', t: '손을 가리거나 흔들면 센서 숫자가 바뀌어요'},
+  {id: 'c7', t: '조건을 만들면 서보모터·네오픽셀이 움직여요', s: '서보가 안 움직이면 Robotbit 배터리 스위치를 켜요.'},
+  {id: 'c8', t: '원래대로 돌아오는 조건도 실제 장치에서 작동해요'},
+  {g: '제출'},
+  {id: 'c9', t: '파일 이름이 작품제목_이름.html이에요', s: '클래스룸 과제 안내와 같은 규칙이에요. 예: 밤길등불_홍길동.html'},
+];
+const checkItems = CHECKLIST.filter(c => c.id);
+CHECKLIST.forEach(c => {
+  const li = document.createElement('li');
+  if (c.g) { li.className = 'grp'; li.textContent = c.g; $('checklist').append(li); return; }
+  li.innerHTML = `<input type="checkbox" id="${c.id}"><label for="${c.id}"></label>`;
+  li.querySelector('label').textContent = c.t;
+  if (c.s) { const s = document.createElement('small'); s.textContent = c.s; li.querySelector('label').append(s); }
+  const cb = li.querySelector('input'); cb.checked = !!(saved.__checks || {})[c.id];
+  cb.addEventListener('change', () => { saved.__checks = {...(saved.__checks || {}), [c.id]: cb.checked}; save(); renderChecklist(); });
+  $('checklist').append(li);
+});
+function renderChecklist() {
+  const n = checkItems.filter(c => $(c.id).checked).length;
+  $('checkCount').textContent = `${n} / ${checkItems.length}`;
+  if ($('allDone').hidden && n === checkItems.length && renderChecklist.ready) window.Sound && Sound.ok();
+  $('allDone').hidden = n < checkItems.length;
+  updateStepper();
+}
+
+const FIXES = [
+  {h: '버튼을 눌러도 아무 반응이 없어요', ai: true, ask: '버튼을 눌러도 반응이 없어. onclick 속성 대신 addEventListener로 연결하고, 스크립트를 body 맨 끝에 두고, 버튼 id와 스크립트의 id가 모두 같은지 확인해서 생략 없는 전체 코드를 다시 줘.'},
+  {h: '코드가 중간에 끊겨요', ai: true, ask: '코드가 중간에 끊겼어. 처음부터 끝까지 생략 없는 완전한 HTML 코드 한 개로 다시 줘. 설명은 코드 아래에 3줄만 써줘.'},
+  {h: '연결은 됐는데 숫자가 안 바뀌어요', ai: true, pre: '먼저 메이크코드 탭을 닫았는지 확인해요. 그래도 안 되면:', ask: '실제 장치 모드에서 센서 숫자가 안 바뀌어. 받은 데이터를 줄바꿈마다 한 줄씩 나누고, 줄 끝에 남은 CR 문자를 지운 뒤, D로 시작하고 숫자가 8개인 줄만 대시보드에 반영하도록 고쳐서 전체 코드를 다시 줘. 받은 줄은 통신 기록에도 보여줘.'},
+  {h: '조건이 맞는데 장치가 안 움직여요', ai: true, ask: '센서값이 조건에 맞는데 실제 장치가 움직이지 않아. 실제 장치 모드에서도 같은 판단 함수가 0.2초마다 실행되는지, 상태가 바뀔 때 S·L·R 명령 끝에 줄바꿈을 붙여 보내는지 확인해서 고쳐줘. 보낸 명령은 통신 기록에 보여줘.'},
+  {h: '불빛이나 서보가 계속 깜빡여요', ai: true, ask: '조건 경계에서 서보와 네오픽셀이 계속 켜졌다 꺼졌다 해. 켜지는 기준과 꺼지는 기준을 다르게 두고(예: 50에서 켜고 80에서 끄기), 상태가 바뀔 때만 명령을 보내도록 고쳐서 전체 코드를 다시 줘.'},
+  {h: '기울기 방향이 반대로 나와요', ai: true, ask: '앞으로 기울였는데 화면에는 뒤로 나와. 앞뒤 기울기 판단의 부호를 반대로 바꿔서 전체 코드를 다시 줘. 좌우는 그대로 둬.'},
+  {h: '디자인만 바꾸고 싶어요', ai: true, ask: '기능과 통신 규칙은 그대로 두고 디자인만 바꿔줘: (원하는 색과 분위기를 여기에 적기). 생략 없는 전체 코드를 다시 줘.'},
+  {h: '연결 버튼을 눌러도 목록에 아무것도 없어요', ai: false, p: 'USB 선을 다시 꽂고, 데이터 전송이 되는 선인지 확인해요. 크롬에서 열었는지 확인해요. 「포트 사용 중」이 뜨면 메이크코드 탭이나 다른 웹앱 탭을 닫아요.'},
+  {h: '한글이 깨져 보여요', ai: false, p: '메모장에서 다른 이름으로 저장할 때 인코딩을 UTF-8로 골라 다시 저장해요.'},
+  {h: '파일이 메모장으로 열려요', ai: false, p: '.txt로 저장된 거예요. 파일 형식을 「모든 파일」로 바꾸고 이름 끝에 .html을 붙여 다시 저장해요.'},
+];
+FIXES.forEach(f => {
+  const a = document.createElement('article'); a.className = 'fix';
+  a.innerHTML = `<span class="who"></span><h3></h3>`;
+  a.querySelector('.who').textContent = f.ai ? '제미나이에 보내기' : '직접 확인하기';
+  if (f.ai) a.querySelector('.who').classList.add('ai');
+  a.querySelector('h3').textContent = f.h;
+  if (f.pre) { const p = document.createElement('p'); p.textContent = f.pre; a.append(p); }
+  if (f.p) { const p = document.createElement('p'); p.textContent = f.p; a.append(p); }
+  if (f.ask) {
+    const q = document.createElement('blockquote'); q.textContent = f.ask; a.append(q);
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'btn ghost'; b.textContent = '문장 복사';
+    b.addEventListener('click', async () => { b.textContent = await copyText(f.ask) ? '복사했어요 ✓' : '복사가 안 돼요'; setTimeout(() => { b.textContent = '문장 복사'; }, 2000); });
+    a.append(b);
+  }
+  $('fixes').append(a);
+});
+
+/* 5-1. 작품 소개 카드 */
+const val = n => (saved[n] || '').trim().replace(/\s*\n\s*/g, ' ');
+const cut = (t, n) => t.length > n ? t.slice(0, n - 1) + '…' : t;
+const workTitle = () => (saved.__title || '').trim();
+$('workTitle').value = saved.__title || '';
+$('workTitle').addEventListener('input', e => { saved.__title = e.target.value; save(); renderCard(); renderTalk(); });
+function sensorList() { return val('③').split(/[,，/·、]|\s그리고\s/).map(s => s.trim()).filter(Boolean); }
+function cardNode() {
+  const box = document.createElement('div'); box.className = 'introcard';
+  const h = document.createElement('h3'); h.textContent = workTitle() || '작품 이름을 적어요';
+  const sub = document.createElement('p'); sub.className = 'ic-sub'; sub.textContent = val('②') || '장치 모양(②)을 1단계에 적어요';
+  const grid = document.createElement('div'); grid.className = 'ic-grid';
+  const item = (label, text, wide) => {
+    const d = document.createElement('div'); d.className = 'ic-item' + (wide ? ' wide' : '') + (text ? '' : ' empty');
+    const b = document.createElement('b'); b.textContent = label; d.append(b);
+    if (typeof text === 'string') d.append(text || '아직 비어 있어요'); else d.append(text);
+    grid.append(d); return d;
+  };
+  item('해결할 문제 ①', val('①'), true);
+  const chips = document.createElement('div'); chips.className = 'ic-sensors';
+  sensorList().forEach(s => { const sp = document.createElement('span'); sp.textContent = s; chips.append(sp); });
+  item('사용한 센서 ③', sensorList().length ? chips : '', false);
+  item('화면 반응 ⑥', val('⑥'), false);
+  const flow = document.createElement('div'); flow.className = 'ic-flow';
+  const a = document.createElement('div'); a.textContent = val('④') || '작동 조건 ④';
+  const ar = document.createElement('span'); ar.className = 'arrow'; ar.textContent = '→';
+  const c = document.createElement('div'); c.textContent = val('⑤') || '장치 반응 ⑤';
+  flow.append(a, ar, c);
+  item('이럴 때 → 이렇게 움직여요 ④⑤', flow, true);
+  item('원래대로 돌아오기 ⑦', val('⑦'), true);
+  box.append(h, sub, grid); return box;
+}
+function cardText() {
+  return [`「${workTitle() || '작품 이름'}」`, `문제: ${val('①')}`, `장치 모양: ${val('②')}`, `센서: ${val('③')}`,
+    `작동: ${val('④')} → ${val('⑤')}`, `화면: ${val('⑥')}`, `원래대로: ${val('⑦')}`].join('\n');
+}
+function renderCard() { $('introCard').replaceWith(Object.assign(cardNode(), {id: 'introCard'})); }
+$('cardBig').addEventListener('click', () => { $('cardDlgBody').replaceChildren(cardNode()); $('cardDlg').showModal(); });
+$('cardDlgClose').addEventListener('click', () => $('cardDlg').close());
+$('cardDlg').addEventListener('click', e => { if (e.target === $('cardDlg')) $('cardDlg').close(); });
+$('cardCopy').addEventListener('click', async () => { $('cardNote').textContent = await copyText(cardText()) ? '카드 글을 복사했어요.' : '복사가 안 돼요.'; });
+
+/* 5-2. 1분 발표 */
+function talkParts() {
+  const title = workTitle() || '내 작품';
+  return [
+    {t: '문제 소개', s: `“${cut(val('①').replace(/[.。!?]+$/, '') || '○○', 40)}. 이 문제를 해결하려고 「${title}」을 만들었어요.”`},
+    {t: '체험 모드 시연', s: `“체험 모드에서 ${cut(sensorList().join('·') || '센서', 24)} 값을 바꾸면 화면이 이렇게 바뀌어요.”`},
+    {t: '실제 장치 시연', s: `“실제 장치에서 보여 줄게요. ${cut(val('④') || '조건을 만들면', 30)} → ${cut(val('⑤') || '장치가 움직여요', 30)}”`},
+    {t: '아쉬운 점·다음 계획', s: '“아쉬운 점은 ○○이고, 다음에는 ○○ 기능을 더하고 싶어요.”'},
+  ];
+}
+function renderTalk() {
+  $('talk').replaceChildren(...talkParts().map((p, i) => {
+    const li = document.createElement('li');
+    li.innerHTML = '<b></b><strong></strong><p></p>';
+    li.querySelector('b').textContent = `${i * 15}~${i * 15 + 15}초`;
+    li.querySelector('strong').textContent = `${i + 1}. ${p.t}`;
+    li.querySelector('p').textContent = p.s;
+    return li;
+  }));
+  markTalk();
+}
+let talkSec = 0, talkTimer = null;
+function markTalk() {
+  const now = talkSec >= 60 ? -1 : Math.floor(talkSec / 15);
+  [...$('talk').children].forEach((li, i) => li.classList.toggle('now', !!talkTimer && i === now));
+  $('talkBar').style.width = (talkSec / 60 * 100) + '%';
+  $('talkTime').textContent = talkSec >= 60 ? '끝!' : `${60 - talkSec}초`;
+}
+function stopTalk() { clearInterval(talkTimer); talkTimer = null; $('talkStart').textContent = talkSec > 0 && talkSec < 60 ? '이어서 하기' : '1분 연습 시작'; markTalk(); }
+$('talkStart').addEventListener('click', () => {
+  if (talkTimer) return stopTalk();
+  if (talkSec >= 60) talkSec = 0;
+  $('talkStart').textContent = '멈추기';
+  talkTimer = setInterval(() => { talkSec++; if (talkSec >= 60) stopTalk(); else markTalk(); }, 1000);
+  markTalk();
+});
+$('talkReset').addEventListener('click', () => { talkSec = 0; stopTalk(); });
+
+/* 5-3. 조원끼리 돌아보기 */
+saved.__peers = Array.isArray(saved.__peers) ? saved.__peers : [{}, {}, {}];
+saved.__peers.forEach((p, i) => {
+  const d = document.createElement('div'); d.className = 'peer';
+  d.innerHTML = `<h3>조원 ${i + 1}의 작품</h3><label>작품 이름<input data-k="name" maxlength="30"></label><label>칭찬 1개<textarea data-k="good"></textarea></label><label>제안 1개<textarea data-k="idea"></textarea></label>`;
+  d.querySelectorAll('[data-k]').forEach(el => {
+    el.value = p[el.dataset.k] || '';
+    el.addEventListener('input', () => { p[el.dataset.k] = el.value; save(); });
+  });
+  $('peers').append(d);
+});
+
+/* 5-4. 제출 확인 */
+$('submitCheck').checked = !!saved.__submitted;
+$('submitCheck').addEventListener('change', e => { saved.__submitted = e.target.checked; save(); updateStepper(); });
+
+/* 6. 느낀 점 */
+const REFL = [
+  {id: 'r1', t: '오늘 배운 점', h: '센서·통신·웹앱 중에서 새로 알게 된 것', chips: ['센서값은 숫자로 전달돼요', '장치와 웹앱은 짧은 글자 약속으로 대화해요', '조건을 숫자로 정해야 정확해요', '웹앱이 판단하고 장치는 명령대로 움직여요']},
+  {id: 'r2', t: '어려웠던 점과 해결한 방법', h: '막혔던 순간과 어떻게 풀었는지', chips: ['연결이 안 됐는데 메이크코드 탭을 닫아서 해결했어요', '버튼이 안 눌려서 제미나이에게 다시 요청했어요', '조건 숫자를 여러 번 바꿔 봤어요']},
+  {id: 'r3', t: '제미나이(AI)와 함께 만들며 느낀 점', h: 'AI에게 요청할 때 알게 된 점', chips: ['자세하게 요청할수록 원하는 결과가 나와요', 'AI가 만든 코드도 직접 시험해 봐야 해요', '한 번에 하나씩 고쳐 달라고 하면 좋아요']},
+  {id: 'r4', t: '인상 깊은 조원 작품과 이유', h: '5-3에서 함께 돌아본 조원 작품 중에서', chips: []},
+  {id: 'r5', t: '다음에 더하고 싶은 기능', h: '센서나 반응을 하나 더한다면', chips: ['소리 알림', '기록을 그래프로 저장', '두 가지 센서를 함께 쓰는 조건']},
+];
+saved.__refl = saved.__refl && typeof saved.__refl === 'object' ? saved.__refl : {};
+const reflBoxes = {};
+REFL.forEach(q => {
+  const d = document.createElement('div'); d.className = 'field' + (q.id === 'r1' || q.id === 'r2' ? ' wide' : '');
+  d.innerHTML = `<label for="${q.id}"><span class="t"></span></label><p class="hint"></p><textarea id="${q.id}" rows="2"></textarea><div class="chips"></div>`;
+  d.querySelector('.t').textContent = q.t; d.querySelector('.hint').textContent = q.h;
+  const ta = d.querySelector('textarea'); ta.value = saved.__refl[q.id] || '';
+  ta.addEventListener('input', () => { saved.__refl[q.id] = ta.value; save(); renderRefl(); });
+  reflBoxes[q.id] = {ta, chips: d.querySelector('.chips'), q};
+  $('reflFields').append(d);
+});
+function fillChips() {
+  Object.values(reflBoxes).forEach(({ta, chips, q}) => {
+    const list = q.id === 'r4' ? saved.__peers.map(p => (p.name || '').trim()).filter(Boolean).map(n => `「${n}」`) : q.chips;
+    chips.replaceChildren(...list.map(c => {
+      const b = document.createElement('button'); b.type = 'button'; b.textContent = '+ ' + c;
+      b.addEventListener('click', () => { const v = ta.value.trim(); ta.value = v ? v + ' ' + c : c; ta.dispatchEvent(new Event('input')); ta.focus(); });
+      return b;
+    }));
+    chips.hidden = !list.length;
+  });
+}
+for (let i = 1; i <= 5; i++) {
+  const b = document.createElement('button'); b.type = 'button'; b.textContent = `${i}점`;
+  b.setAttribute('role', 'radio'); b.setAttribute('aria-label', `${i}점`);
+  b.addEventListener('click', () => { saved.__stars = i; save(); renderStars(); renderRefl(); });
+  $('stars').append(b);
+}
+function renderStars() {
+  [...$('stars').children].forEach((b, i) => { b.classList.toggle('on', i < (saved.__stars || 0)); b.setAttribute('aria-checked', String(i + 1 === saved.__stars)); });
+}
+function reflText() {
+  const stars = saved.__stars ? ` (만족도 ${saved.__stars}점 / 5점)` : '';
+  const lines = REFL.map(q => [q.t, (saved.__refl[q.id] || '').trim().replace(/\s*\n\s*/g, ' ')]).filter(([, v]) => v).map(([t, v]) => `· ${t}: ${v}`);
+  return `[${workTitle() || '내 작품'}]${stars}\n` + lines.join('\n');
+}
+function renderRefl() {
+  $('reflBox').textContent = reflText();
+  const n = REFL.filter(q => (saved.__refl[q.id] || '').trim()).length;
+  $('reflLen').textContent = `${n} / ${REFL.length} 질문 답함`;
+  $('finalBox').hidden = !saved.__reflCopied;
+}
+$('reflCopy').addEventListener('click', async () => {
+  const n = REFL.filter(q => (saved.__refl[q.id] || '').trim()).length;
+  if (n < 3) { $('reflNote').textContent = '질문 3개 이상 답하고 복사해요.'; return; }
+  const ok = await copyText(reflText());
+  $('reflNote').textContent = ok ? '복사했어요! 투닝 AI에 붙여넣어요.' : '복사가 안 돼요. 글을 드래그해서 복사해요.';
+  if (ok) { saved.__reflCopied = true; save(); renderRefl(); updateStepper(); window.Sound && Sound.ok(); }
+});
+
+/* 단계 이동 */
+const STEPS = 6;
+let curStep = 1;
+function stepDone(n) {
+  if (n === '1') return filled().length === P.fields.length;
+  if (n === '2') return copiedOnce;
+  if (n === '3') return !!saved.__opened;
+  if (n === '4') return checkItems.every(c => $(c.id).checked);
+  if (n === '5') return !!saved.__submitted;
+  if (n === '6') return !!saved.__reflCopied;
+  return false;
+}
+function updateStepper() {
+  document.querySelectorAll('[data-step-go]').forEach(b => {
+    if (b.dataset.stepGo === String(curStep)) b.setAttribute('aria-current', 'step'); else b.removeAttribute('aria-current');
+    b.classList.toggle('done', stepDone(b.dataset.stepGo));
+  });
+  $('prevStep').disabled = curStep === 1;
+  $('nextStep').disabled = curStep === STEPS;
+}
+function goStep(n) {
+  curStep = Math.max(1, Math.min(STEPS, n));
+  document.querySelectorAll('[data-step]').forEach(s => { s.hidden = s.dataset.step !== String(curStep); });
+  if (curStep === 2) renderPrompt();
+  if (curStep === 5) { renderCard(); renderTalk(); }
+  if (curStep === 6) { fillChips(); renderRefl(); }
+  if (curStep !== 5 && talkTimer) stopTalk();
+  history.replaceState(null, '', '#step' + curStep);
+  updateStepper(); window.scrollTo({top: 0});
+}
+document.querySelectorAll('[data-step-go]').forEach(b => b.addEventListener('click', () => goStep(Number(b.dataset.stepGo))));
+$('prevStep').addEventListener('click', () => goStep(curStep - 1));
+$('nextStep').addEventListener('click', () => goStep(curStep + 1));
+renderChecks(); renderChecklist(); renderStars(); renderChecklist.ready = true;
+goStep(Number((location.hash.match(/^#step([1-6])$/) || [0, 1])[1]));
+</script>
+<!-- LESSON:JS -->
+</body>
+</html>

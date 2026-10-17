@@ -1,0 +1,805 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>배선 연습 · 함께 연결</title>
+<style>
+/* 페이지 기본 스타일. 공통 디자인(tools/lesson.css)이 이 층보다 우선합니다. */
+@layer base, page;
+@layer page{
+  :root{--gnd:#252b29;--pwr:#df3d36;--sig:#d8a600;--sig2:#277dd4}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);font:16px/1.7 system-ui,'Malgun Gothic','Apple SD Gothic Neo',sans-serif}
+  button,select{font:inherit;cursor:pointer}
+  a{color:var(--brand)}
+  .wrap{margin:0 auto}
+  header.top{background:var(--card)}
+  header.top .wrap{display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .brand small{display:block}
+  .back{border:1px solid var(--line);color:var(--ink);font-weight:700;text-decoration:none}
+  .head p{margin:0}
+  .pins-to-find{display:flex;flex-wrap:wrap;gap:8px;margin:0;padding:0;list-style:none}
+  .pins-to-find li{background:var(--brand-soft);border-radius:10px;padding:6px 12px;font-weight:700}
+  .pins-to-find li small{font-weight:500;color:var(--muted)}
+  /* 연습 모드 */
+  .modes{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}
+  .modes button{flex:1;min-width:150px;background:var(--card);color:var(--ink);padding:10px 12px;font-weight:700}
+  .modes button[aria-pressed="true"]{background:var(--brand-soft)}
+  .modes .done::after{content:" ✓";color:var(--ok)}
+  .toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:10px}
+  .toolbar .explain{flex:1}
+  .btn{background:var(--brand);padding:9px 14px}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  .count{font:800 22px/1 ui-monospace,Consolas,monospace}
+  .count span{font:600 14px system-ui,sans-serif;color:var(--muted)}
+  .status{display:flex;align-items:flex-start;gap:8px;padding:12px 14px;background:var(--brand-soft);margin-bottom:8px;min-height:50px}
+  .status[data-tone="error"]{background:color-mix(in srgb,var(--danger) 14%,transparent);color:var(--danger)}
+  .status[data-tone="success"]{background:color-mix(in srgb,var(--ok) 16%,transparent);color:var(--ok)}
+  .status output{flex:1;font-weight:600}
+  .legend{margin:0 0 10px}
+  .legend i{display:inline-block;width:12px;height:12px;border-radius:50%;vertical-align:-1px;margin:0 4px 0 10px}
+  /* 작업대 */
+  .scroll{overflow-x:auto;background:var(--bg)}
+  .stage{position:relative;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;padding:14px;min-width:640px}
+  .device{background:var(--card);padding:10px;position:relative}
+  .device.board{grid-column:1 / -1;max-width:720px;width:100%;justify-self:center}
+  .device h3{margin:0 0 6px}
+  .photo{position:relative;width:100%}
+  .photo svg{display:block;width:100%;height:100%}
+  .pin{position:absolute;transform:translate(-50%,-50%);width:22px;height:22px;border-radius:50%;border:3px solid #fff;background:var(--c);box-shadow:0 0 0 2px var(--c),0 2px 6px #0006;padding:0;z-index:2}
+  .pin .lbl{position:absolute;left:50%;top:-6px;transform:translate(-50%,-100%);white-space:nowrap;background:#1d2433e6;color:#fff;font-weight:700;padding:2px 6px;pointer-events:none}
+  .pin .lbl{display:none}
+  .pin:hover .lbl,.pin:focus-visible .lbl,.pin.hint .lbl,.pin[aria-pressed="true"] .lbl{display:block}
+  .pin .lbl:empty{display:none!important}
+  .pin.wired{box-shadow:0 0 0 2px var(--c),0 0 0 6px color-mix(in srgb,var(--ok) 60%,transparent)}
+  .pin[aria-pressed="true"]{transform:translate(-50%,-50%) scale(1.35);box-shadow:0 0 0 3px var(--brand),0 0 0 8px var(--brand-soft)}
+  .pin.hint{animation:pulse 1s infinite}
+  @keyframes pulse{50%{box-shadow:0 0 0 2px var(--c),0 0 0 12px color-mix(in srgb,var(--warm) 55%,transparent)}}
+  .names{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+  .names button{display:inline-flex;align-items:center;gap:6px;background:var(--card);color:var(--ink);padding:3px 10px;font-weight:600}
+  .names button i{width:10px;height:10px;border-radius:50%;background:var(--c)}
+  .names button[aria-pressed="true"]{border-color:var(--brand);background:var(--brand-soft)}
+  .names button.wired::after{content:"✓";color:var(--ok);font-weight:800}
+  .names button.hint{background:var(--warm-soft)}
+  .dnote{margin:8px 0 0}
+  svg.wires{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:1;overflow:visible}
+  /* 연결 목록·점검 */
+  .lower{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:14px;margin-top:14px}
+  .conns h3,.preflight legend{font-size:16px;font-weight:800;margin:0 0 8px}
+  .conns ul{list-style:none;margin:0;padding:0}
+  .conns li{display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--line);padding:6px 0;font-size:14px}
+  .conns li i{flex:none;width:14px;height:14px;border-radius:50%}
+  .conns li span{flex:1}
+  .conns li button{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:8px;padding:2px 8px;font-size:12px}
+  .preflight{margin:0}
+  .preflight label{display:flex;gap:8px;align-items:flex-start;margin:6px 0}
+  .preflight[disabled]{opacity:.55}
+  .actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+  .note{background:var(--warm-soft);margin:14px 0 0}
+  .credits ul{padding-left:18px;margin:6px 0 0}
+  /* 단계 표시 */
+  .stepper{position:sticky;top:0;z-index:5;background:color-mix(in srgb,var(--bg) 92%,transparent)}
+  .stepper ol{list-style:none;display:flex;margin:0;overflow-x:auto}
+  .stepper li{flex:1;min-width:130px}
+  .stepper button{width:100%;display:flex;align-items:center;gap:8px;background:var(--card);text-align:left;font-weight:700;line-height:1.3}
+  .stepper .num{flex:none;border-radius:50%;display:grid;place-items:center;font-weight:800}
+  .stepper button[aria-current="step"]{background:var(--brand-soft)}
+  .stepper button.done .num{background:var(--ok);color:#fff}
+  .stepnav{display:flex;justify-content:space-between;gap:12px}
+  .stepnav .btn:disabled{visibility:hidden}
+  /* 공통 조각 */
+  .head .tags{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+  .head .tags span{background:var(--warm-soft);color:var(--ink);padding:4px 12px;font-weight:700}
+  .sec-head{display:flex;justify-content:space-between;gap:10px}
+  .tip{background:color-mix(in srgb,var(--ok) 12%,transparent);margin:0 0 18px}
+  .tbl{width:100%;border-collapse:collapse}
+  .tbl th,.tbl td{text-align:left;padding:9px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+  .ph button{display:block;width:100%;padding:0;background:var(--bg);overflow:hidden;position:relative}
+  .ph img{display:block;width:100%;height:auto}
+  .ph .zoomhint{position:absolute;right:8px;bottom:8px;background:#1d2433d9;color:#fff;font-size:12px;font-weight:700;padding:3px 8px}
+  .ph.big img{max-height:420px;object-fit:contain;background:var(--bg)}
+  .ph.narrow{max-width:560px;margin:0 auto}
+  dialog.zoom{border:0;padding:14px;max-width:min(960px,94vw);background:var(--card);color:var(--ink)}
+  dialog.zoom::backdrop{background:#0009}
+  dialog.zoom img{display:block;max-width:100%;max-height:72vh;margin:8px auto}
+  .zoom-head{display:flex;justify-content:space-between;align-items:center;gap:10px}
+  /* 1. 점퍼선 */
+  .cables{display:grid;gap:14px}
+  .cable{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);align-items:center;padding:12px;background:var(--bg)}
+  .cable .en{font-size:12px;font-weight:700;color:var(--brand)}
+  .cable h3{margin:2px 0 4px}
+  .cable h3 small{font-weight:700;background:var(--warm-soft);padding:2px 10px;margin-left:6px}
+  .cable p{margin:0 0 6px}
+  .use{background:var(--card);padding:8px 12px;margin-top:6px}
+  /* 확인 문제 */
+  .quiz{background:var(--card);margin:0 0 18px}
+  .quiz h2{margin:0 0 4px}
+  .quiz .opts{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+  .quiz .opts button{background:var(--bg);color:var(--ink);padding:10px 16px;font-weight:700}
+  .quiz .opts button[aria-pressed="true"]{border-color:var(--brand);background:var(--brand-soft)}
+  .feedback{padding:10px 14px;margin:8px 0;background:color-mix(in srgb,var(--ok) 14%,transparent);font-weight:600}
+  .feedback.retry{background:var(--warm-soft);color:var(--ink)}
+  /* 2. 꽂고 빼기 */
+  .insert{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);gap:18px;align-items:center}
+  .insert ol{margin:0;padding-left:20px}
+  .player .controls{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:12px 0}
+  .player .caption h3{margin:0 0 4px}
+  .player .caption p{margin:0 0 8px}
+  .dots{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+  .dots button{width:34px;height:34px;border-radius:50%;background:var(--card);color:var(--ink);font-weight:800}
+  .dots button[aria-current="step"]{background:var(--brand)}
+  /* 4. G·V·S */
+  .gvs{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px}
+  .gvs article{background:var(--card);border:1px solid var(--line);border-top:8px solid var(--c);padding:14px}
+  .gvs b{font:900 30px/1 system-ui,sans-serif}
+  .gvs .cname{margin-left:8px;font-weight:700}
+  .gvs strong{display:block;font-size:18px;margin:6px 0 4px}
+  .gvs p{margin:0}
+  .pinphoto{position:relative;max-width:720px;margin:6px auto 10px}
+  .pinphoto img{display:block;width:100%}
+  .hot{position:absolute;border:3px dashed transparent;background:transparent;padding:0}
+  .hot:hover,.hot:focus-visible{border-color:var(--brand)}
+  .hot.correct{border:4px solid var(--c);background:color-mix(in srgb,var(--c) 18%,transparent)}
+  .hot.wrong{border:3px solid var(--danger);background:color-mix(in srgb,var(--danger) 15%,transparent)}
+  .hot .call{position:absolute;right:calc(100% + 6px);top:50%;transform:translateY(-50%);white-space:nowrap;background:var(--c);color:#fff;font-size:12px;font-weight:800;border-radius:6px;padding:2px 8px}
+  .textpins{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:6px 0}
+  .textpins button{display:inline-flex;align-items:center;gap:6px;background:var(--card);color:var(--ink);padding:6px 12px;font-weight:700}
+  .textpins button i{width:12px;height:12px;border-radius:50%;background:var(--c)}
+  .target{display:inline-block;background:var(--c);padding:0 8px}
+  @media (max-width:760px){
+    .cable,.insert{grid-template-columns:1fr}
+    .gvs{grid-template-columns:1fr}
+  }
+  @media (max-width:760px){
+    .lower{grid-template-columns:1fr}
+  }
+  @media (prefers-reduced-motion:reduce){
+    .pin.hint{animation:none}
+  }
+}
+</style>
+<!-- LESSON:CSS -->
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <div class="brand">마이크로비트 웹앱 연결 실험실<small>2-1 준비물과 배선 · 따로 연습하기</small></div>
+  <a class="back" href="index.html#stage2">← 2단계로 돌아가기</a>
+</div></header>
+
+<nav class="stepper" aria-label="배선 연습 순서"><div class="wrap"><ol>
+  <li><button type="button" data-step-go="1"><span class="num">1</span><span class="label">점퍼선 알아보기</span></button></li>
+  <li><button type="button" data-step-go="2"><span class="num">2</span><span class="label">꽂고 빼는 방법</span></button></li>
+  <li><button type="button" data-step-go="3"><span class="num">3</span><span class="label">내 보드 알아보기</span></button></li>
+  <li><button type="button" data-step-go="4"><span class="num">4</span><span class="label">G · V · S와 핀 번호</span></button></li>
+  <li><button type="button" data-step-go="5"><span class="num">5</span><span class="label">함께 연결</span></button></li>
+</ol></div></nav>
+
+<main class="wrap">
+<!-- 1. 점퍼선 알아보기 -->
+<div data-step="1">
+  <section class="head">
+    <h1>선의 양 끝을 보면 종류를 알 수 있어요</h1>
+    <p>점퍼선은 보드와 부품 사이에 전기와 신호가 오갈 길을 만들어 주는 선이에요.</p>
+    <div class="tags"><span>수 = 튀어나온 핀</span><span>암 = 핀이 들어가는 구멍</span></div>
+  </section>
+  <section class="card">
+    <div class="sec-head"><h2>세 가지 점퍼선</h2><span>사진을 눌러 크게 보세요</span></div>
+    <div class="cables" id="cables"></div>
+  </section>
+  <p class="tip">점퍼선 자체에는 정해진 +·−가 없어요. 연결한 단자가 역할을 결정해요.</p>
+  <div class="quiz" data-quiz="cable"></div>
+</div>
+
+<!-- 2. 꽂고 빼는 방법 -->
+<div data-step="2" hidden>
+  <section class="head">
+    <h1>한 동작씩, 천천히 따라 해요</h1>
+    <p>사진으로 보는 연결 순서예요. 실제 꽂는 동작은 선생님의 시범을 함께 확인해요.</p>
+  </section>
+  <section class="card insert">
+    <div class="ph" data-photo="images/pl-microbit-insert.webp" data-alt="마이크로비트를 확장보드 슬롯에 꽂은 모습"></div>
+    <div>
+      <h2>앞면을 확인하고 수직으로 꽂아요</h2>
+      <ol>
+        <li>USB·배터리·외부 전원을 모두 분리해요.</li>
+        <li>LED와 A·B 버튼이 보이는 앞면을 사진과 맞춰요.</li>
+        <li>금색 가장자리 단자를 검은 연결 슬롯과 일직선으로 맞춰요.</li>
+        <li>보드 양쪽 윗부분을 잡고 천천히 수직으로 눌러요.</li>
+      </ol>
+      <p class="dnote">뺄 때도 전원을 분리하고 보드 양쪽을 잡아 수직으로 빼요. 좌우로 세게 비틀지 않아요.</p>
+    </div>
+  </section>
+  <section class="card player">
+    <div class="sec-head"><h2>사진 가이드</h2><span id="gCount">1 / 8</span></div>
+    <div class="ph big" id="gPhoto"></div>
+    <div class="controls">
+      <button type="button" class="btn ghost" id="gPrev" aria-label="이전 사진">←</button>
+      <button type="button" class="btn" id="gPlay">순서대로 보기</button>
+      <button type="button" class="btn ghost" id="gNext" aria-label="다음 사진">→</button>
+      <select id="gRate" aria-label="사진 가이드 재생 속도"><option value="0.5">느리게</option><option value="1" selected>보통</option></select>
+    </div>
+    <div class="caption" aria-live="polite"><h3 id="gTitle"></h3><p id="gBody"></p><button type="button" class="btn ghost" id="gSpeak">설명 듣기</button> <span class="dnote" id="gSpeech"></span></div>
+    <div class="dots" id="gDots"></div>
+  </section>
+  <div class="quiz" data-quiz="plug"></div>
+</div>
+
+<!-- 3. 내 보드 알아보기 -->
+<div data-step="3" hidden>
+  <section class="head">
+    <h1>책상 위 보드와 같은 사진을 보고, 방향을 맞춰요</h1>
+    <p>우리 수업은 마이크로비트를 꽂아 쓰는 Robotbit 확장보드를 씁니다. USB 단자 같은 기준점을 찾아 사진과 방향을 맞추면 핀 위치를 찾기 쉬워요.</p>
+  </section>
+  <section class="card">
+    <div class="sec-head"><h2>마이크로비트 확장보드 (Robotbit) 살펴보기</h2></div>
+    <p>왼쪽 P 계열 핀과 오른쪽 S1~S8 영역은 역할과 전원 구성이 달라요. 따로 확인해야 해요.</p>
+    <div class="ph narrow" data-photo="images/pl-board.webp" data-alt="마이크로비트 확장보드(Robotbit)"></div>
+    <h3 style="margin-top:18px">이름표를 보며 위치 확인하기</h3>
+    <div class="ph" data-photo="images/pl-microbit-board-anatomy.webp" data-alt="Robotbit의 주요 부분을 표시한 그림"></div>
+    <table class="tbl" style="margin-top:14px">
+      <thead><tr><th>부분</th><th>하는 일</th><th>우리 수업에서</th></tr></thead>
+      <tbody>
+        <tr><td>센서 연결 핀 (P0~P15)</td><td>GND·3.3V·신호 줄로 센서를 연결</td><td>초음파 P14·P13, 네오픽셀 P15</td></tr>
+        <tr><td>서보 모터 연결 핀 (S1~S8)</td><td>GND·VM·신호 줄로 서보를 연결</td><td>서보모터 S1</td></tr>
+        <tr><td>18650 배터리 홀더·전원 스위치</td><td>보드와 모터에 전원 공급</td><td>서보를 쓰려면 스위치를 켜요</td></tr>
+        <tr><td>USB 충전 포트</td><td>배터리 충전 전용</td><td>코드는 마이크로비트 USB로 넣어요</td></tr>
+        <tr><td>마이크로비트 연결 슬롯</td><td>마이크로비트를 꽂는 곳</td><td>LED 면이 앞으로</td></tr>
+      </tbody>
+    </table>
+  </section>
+  <p class="tip">“3.3V 지원”은 모든 V·VM 단자가 3.3V라는 뜻이 아니에요. 왼쪽 P핀 줄의 빨간 줄은 3.3V, 오른쪽 S1~S8 줄의 빨간 줄은 VM(배터리 전원)입니다.</p>
+  <div class="quiz" data-quiz="board"></div>
+</div>
+
+<!-- 4. G·V·S와 핀 번호 -->
+<div data-step="4" hidden>
+  <section class="head">
+    <h1>검정 G, 빨강 V, 노랑 S로 구별해요</h1>
+    <p>GND는 회로의 기준점, V·VCC는 전원, S는 신호 연결점이에요. 색과 글자를 함께 확인하고, 핀 번호는 프로그램의 이름과 맞춰요.</p>
+  </section>
+  <div class="gvs" id="gvs"></div>
+  <section class="card">
+    <div class="sec-head"><h2 id="gameTitle"></h2><span id="gameCount">0 / 3</span></div>
+    <p class="dnote">사진에서 줄을 누르면 정답 위치가 굵은 색 테두리와 이름표로 표시돼요.</p>
+    <div class="pinphoto" id="pinPhoto"><img src="images/pl-board.webp" alt="확장보드의 GND, 전원, 신호 연결부"></div>
+    <div class="textpins" id="textPins"><span>글자로도 연습해요</span></div>
+    <p class="feedback" id="gameFeedback" role="status" hidden></p>
+    <button type="button" class="btn ghost" id="gameReset">다시 찾기</button>
+  </section>
+  <section class="card">
+    <h3 style="margin:0 0 6px">핀 번호는 위에서 세는 순서가 아니에요</h3>
+    <p style="margin:0">P0, P1, P2 같은 표기를 읽어요. 확장보드의 <b>S1은 P1과 같은 핀이 아니에요.</b> 공통 코드는 초음파 <b>P14·P13</b>, 네오픽셀 <b>P15</b>, 서보 <b>S1</b>을 씁니다.</p>
+  </section>
+</div>
+
+<!-- 5. 함께 연결 -->
+<div data-step="5" hidden>
+  <section class="head">
+    <h1>초음파센서 · 서보모터 · 네오픽셀을 한 보드에</h1>
+    <p>실제로 꽂기 전에 사진 위에서 먼저 연결해 봅니다. 연결할 두 핀을 차례로 누르면 선이 생깁니다. 공통 코드와 같은 핀 번호를 써야 합니다.</p>
+  </section>
+
+  <section class="card">
+    <strong>공통 코드에서 쓰는 핀</strong>
+    <ul class="pins-to-find" style="margin-top:8px">
+      <li>Trig <b>P14</b> <small>초음파 보내기</small></li>
+      <li>Echo <b>P13</b> <small>초음파 받기</small></li>
+      <li><b>S1</b> <small>서보모터</small></li>
+      <li><b>P15</b> <small>네오픽셀 6개</small></li>
+    </ul>
+  </section>
+
+  <section class="card" aria-label="실물 사진으로 점퍼선 연결 연습">
+    <div class="toolbar">
+      <div class="explain" id="modeExplain"></div>
+      <span class="count" id="count">0<span> / 10개 연결</span></span>
+    </div>
+    <div class="modes" role="group" aria-label="연습 단계">
+      <button type="button" data-mode="guide" aria-pressed="true">1. 따라 하기</button>
+      <button type="button" data-mode="labels" aria-pressed="false">2. 이름만 보기</button>
+      <button type="button" data-mode="solo" aria-pressed="false">3. 혼자 연결</button>
+    </div>
+    <div class="toolbar">
+      <button type="button" class="btn ghost" id="hintBtn">다음 연결 힌트</button>
+      <label>사진 크기 <select id="zoom"><option value="1">기본</option><option value="1.4">크게</option><option value="1.8">더 크게</option></select></label>
+    </div>
+    <div class="status" id="status" data-tone="normal"><output aria-live="polite" id="msg"></output><button type="button" class="btn ghost" id="cancelBtn" hidden>선택 취소</button></div>
+    <p class="legend">작은 핀은 사진 아래 이름표를 눌러도 연결됩니다.<i style="background:var(--gnd)"></i>GND <i style="background:var(--pwr)"></i>전원 <i style="background:var(--sig)"></i>신호 <i style="background:var(--sig2)"></i>Echo 신호</p>
+    <div class="scroll" tabindex="0" aria-label="배선 작업대. 확대하면 좌우로 밀 수 있습니다.">
+      <div class="stage" id="stage"><svg class="wires" id="wires" aria-hidden="true"></svg></div>
+    </div>
+    <div class="lower">
+      <div class="conns"><h3>내가 꽂은 선</h3><ul id="conns"></ul><p class="dnote" id="noConns">선을 연결하면 여기에 기록됩니다.</p></div>
+      <div>
+        <fieldset class="preflight" id="preflight" disabled>
+          <legend>전원을 켜기 전, 직접 확인해요</legend>
+          <label><input type="checkbox" data-check="ground"> 검정 GND선끼리 연결했어요.</label>
+          <label><input type="checkbox" data-check="power"> 빨간 전원선의 위치(3.3V, 서보는 VM)를 확인했어요.</label>
+          <label><input type="checkbox" data-check="signal"> 신호 핀 번호가 공통 코드와 같아요. (P14·P13·S1·P15)</label>
+          <p class="dnote" id="preNote">선을 모두 연결하면 점검할 수 있어요.</p>
+        </fieldset>
+        <div class="actions">
+          <button type="button" class="btn" id="verifyBtn" disabled>전원 켜기 전 최종 확인</button>
+          <button type="button" class="btn ghost" id="undoBtn" disabled>한 단계 되돌리기</button>
+          <button type="button" class="btn ghost" id="resetBtn">처음부터</button>
+        </div>
+      </div>
+    </div>
+    <p class="note" id="sceneNote"></p>
+    <p class="dnote">선의 연결 관계를 배우는 연습입니다. 실제 하드웨어를 움직이지는 않습니다.</p>
+  </section>
+</div>
+
+  <div class="stepnav">
+    <button type="button" class="btn ghost" id="prevStep">← 이전</button>
+    <button type="button" class="btn" id="nextStep">다음 →</button>
+  </div>
+
+  <dialog class="zoom" id="zoomDlg"><div class="zoom-head"><strong id="zoomTitle"></strong><button type="button" class="btn ghost" id="zoomClose">닫기</button></div><img id="zoomImg" alt=""><p class="dnote" id="zoomCredit"></p></dialog>
+
+  <section class="card credits">
+    <strong>출처</strong>
+    <p style="margin:6px 0 0">이 페이지는 <a href="https://github.com/yeobtech/pinlab-physical-computing" target="_blank" rel="noopener">핀랩(PINLAB)</a>의 「점퍼선 알아보기」, 「꽂고 빼는 방법」, 「내 보드 알아보기」, 「G · V · S와 핀 번호」 수업과 「거리 반응 장치 종합 연결」 예제를 옮겨 만들었습니다.</p>
+    <ul>
+      <li>확장보드 사진, 마이크로비트 장착 사진, Robotbit 해부도: 핀랩 자료</li>
+      <li>수–수 점퍼선: oomlout, <a href="https://commons.wikimedia.org/wiki/File:A_few_Jumper_Wires.jpg" target="_blank" rel="noopener">Wikimedia Commons</a>, <a href="https://creativecommons.org/licenses/by-sa/2.0/" target="_blank" rel="noopener">CC BY-SA 2.0</a></li>
+      <li>암–수 점퍼선: Edwiyanto, <a href="https://commons.wikimedia.org/wiki/File:Jumper_male-to-female.jpg" target="_blank" rel="noopener">Wikimedia Commons</a>, <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener">CC BY-SA 4.0</a></li>
+      <li>암–암 점퍼선: oomlout, <a href="https://commons.wikimedia.org/wiki/File:Female-Female_Jumper_Wire.jpg" target="_blank" rel="noopener">Wikimedia Commons</a>, <a href="https://creativecommons.org/licenses/by-sa/2.0/" target="_blank" rel="noopener">CC BY-SA 2.0</a></li>
+      <li>점퍼선 사진은 모두 크기를 줄였습니다.</li>
+      <li>초음파센서 사진: Suyash Dwivedi, <a href="https://commons.wikimedia.org/wiki/File:HC_SR04_Ultrasonic_Module.jpg" target="_blank" rel="noopener">Wikimedia Commons</a>, <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener">CC BY-SA 4.0</a> (크기를 줄임)</li>
+      <li>서보모터 사진: Suyash Dwivedi, <a href="https://commons.wikimedia.org/w/index.php?curid=179995500">Wikimedia Commons</a>, <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a> (잘라서 크기를 줄임)</li>
+      <li>네오픽셀 사진: OpenAI 이미지 생성으로 만든 교육용 이미지</li>
+    </ul>
+  </section>
+</main>
+<footer>마이크로비트 웹앱 연결 실험실 · 배선 연습</footer>
+
+<script>
+'use strict';
+const $ = id => document.getElementById(id);
+const C = {ground: 'var(--gnd)', power: 'var(--pwr)', signal: 'var(--sig)'};
+const G = '#252b29', V = '#df3d36', S = '#d8a600', B = '#277dd4';
+const P = (id, label, kind, point) => ({id, label, kind, point});
+const W = (from, to, color, why) => ({from, to, color, why});
+
+/* 핀랩 example-wiring-scenes.ts의 combined 장면을 옮김.
+   보드의 S1 열 가운데 빨간 줄은 사진 표기대로 VM(배터리 전원)으로 고쳐 씀. */
+const y = {ground: 21.7, power: 25.3, signal: 29.7};
+const x = {P13: 28.6, P14: 32, P15: 35.2, S1: 60.6};
+const scene = {
+  devices: [
+    {id: 'board', cls: 'board', name: '마이크로비트 확장보드 (Robotbit)', image: 'images/pl-board.webp', ratio: 502 / 387,
+      note: '코드에 나온 P14·P13·P15·S1을 모두 찾아 세 부품을 함께 연결해요. 왼쪽 P핀 줄의 빨간 줄은 3.3V, 오른쪽 S1~S8 줄의 빨간 줄은 VM(배터리 전원)입니다.',
+      pins: [
+        P('ultraBoard.g', 'P14 열의 GND', 'ground', [x.P14, y.ground]),
+        P('ultraBoard.v', 'P14 열의 3.3V', 'power', [x.P14, y.power]),
+        P('ultraBoard.t', 'P14 신호 · Trig', 'signal', [x.P14, y.signal]),
+        P('ultraBoard.e', 'P13 신호 · Echo', 'signal', [x.P13, y.signal]),
+        P('neoBoard.g', 'P15 열의 GND', 'ground', [x.P15, y.ground]),
+        P('neoBoard.v', 'P15 열의 3.3V', 'power', [x.P15, y.power]),
+        P('neoBoard.s', 'P15 신호 · NeoPixel DIN', 'signal', [x.P15, y.signal]),
+        P('servoBoard.g', 'S1 열의 GND', 'ground', [x.S1, y.ground]),
+        P('servoBoard.v', 'S1 열의 VM', 'power', [x.S1, y.power]),
+        P('servoBoard.s', 'S1 신호 · 서보 제어', 'signal', [x.S1, y.signal]),
+      ]},
+    {id: 'ultra', name: 'HC-SR04 · 초음파센서', image: 'images/pl-ultrasonic.webp', crop: [23, 28, 53, 46], ratio: 2555 / 1703,
+      pins: [P('ultra.v', 'VCC', 'power', [47.2, 70]), P('ultra.t', 'Trig', 'signal', [49.7, 70]), P('ultra.e', 'Echo', 'signal', [52.2, 70]), P('ultra.g', 'GND', 'ground', [54.8, 70])]},
+    {id: 'servo', name: 'SG90 · 서보모터', image: 'images/pl-servo.webp', ratio: 1080 / 990,
+      note: '3핀 커넥터의 갈색·빨강·주황 선의 역할을 확인해요.',
+      pins: [P('servo.s', '주황 · 신호', 'signal', [86.9, 9.9]), P('servo.v', '빨강 · 전원', 'power', [89.7, 12.4]), P('servo.g', '갈색 · GND', 'ground', [92.7, 15.4])]},
+    {id: 'neo', name: 'WS2812B · 6픽셀 모듈', image: 'images/pl-neopixel.webp', ratio: 1776 / 887,
+      note: '왼쪽 3핀 소켓: 위에서부터 검정 GND, 빨강 VCC, 노랑 DIN.',
+      pins: [P('neo.g', '검정 · GND', 'ground', [5.1, 43.5]), P('neo.v', '빨강 · VCC', 'power', [5.1, 50.3]), P('neo.s', '노랑 · DIN', 'signal', [5.1, 57.5])]},
+  ],
+  wires: [
+    W('ultra.g', 'ultraBoard.g', G, '초음파센서 GND를 P14 열의 검정 GND에 연결했어요.'),
+    W('ultra.v', 'ultraBoard.v', V, '초음파센서 VCC를 P14 열의 빨간 3.3V에 연결했어요.'),
+    W('ultra.t', 'ultraBoard.t', S, '코드의 Trig P14와 센서 Trig를 맞췄어요.'),
+    W('ultra.e', 'ultraBoard.e', B, '코드의 Echo P13과 센서 Echo를 맞췄어요.'),
+    W('servo.g', 'servoBoard.g', G, '서보의 갈색 선을 S1 열의 검정 GND에 연결했어요.'),
+    W('servo.v', 'servoBoard.v', V, '서보의 빨간 선을 S1 열의 빨간 VM에 연결했어요. 서보는 배터리 전원을 씁니다.'),
+    W('servo.s', 'servoBoard.s', S, '서보의 주황 신호선을 코드의 S1에 연결했어요.'),
+    W('neo.g', 'neoBoard.g', G, '네오픽셀 GND를 P15 열의 검정 GND에 연결했어요.'),
+    W('neo.v', 'neoBoard.v', V, '네오픽셀 VCC를 P15 열의 빨간 3.3V에 연결했어요.'),
+    W('neo.s', 'neoBoard.s', S, '코드의 P15와 네오픽셀 DIN을 맞췄어요.'),
+  ],
+  note: '각 부품은 자기 GND·전원·신호 연결이 모두 필요해요. 핀 번호는 공통 코드와 같아야 해요. 서보를 움직이려면 Robotbit 배터리 스위치를 켜세요.'
+};
+
+const pins = scene.devices.flatMap(d => d.pins.map(p => ({...p, device: d.name})));
+const pinById = id => pins.find(p => p.id === id);
+const full = id => `${pinById(id).device} / ${pinById(id).label}`;
+const pair = (a, b) => [a, b].sort().join('|');
+
+const st = {mode: 'guide', conns: [], selected: null, hint: 0, verified: false, passed: new Set(), checks: new Set()};
+const els = {};   // 핀 id → [사진 위 점, 이름표]
+
+/* 작업대 그리기 */
+function build() {
+  const stage = $('stage');
+  [...stage.querySelectorAll('.device')].forEach(d => d.remove());
+  for (const k in els) delete els[k];
+  for (const d of scene.devices) {
+    const art = document.createElement('article');
+    art.className = 'device ' + (d.cls || '');
+    art.innerHTML = `<h3></h3>`;
+    art.querySelector('h3').textContent = d.name;
+    const crop = d.crop || [0, 0, 100, 100];
+    const photo = document.createElement('div');
+    photo.className = 'photo';
+    photo.style.aspectRatio = String((crop[2] / crop[3]) * (d.ratio || 1));
+    photo.innerHTML = `<svg viewBox="${crop.join(' ')}" preserveAspectRatio="none" role="img" aria-label="${d.name} 사진"><image href="${d.image}" x="0" y="0" width="100" height="100" preserveAspectRatio="none"/></svg>`;
+    const names = document.createElement('div');
+    names.className = 'names';
+    d.pins.forEach((p, i) => {
+      const dot = document.createElement('button');
+      dot.type = 'button'; dot.className = 'pin'; dot.dataset.pin = p.id;
+      dot.style.setProperty('--c', C[p.kind]);
+      dot.style.left = ((p.point[0] - crop[0]) / crop[2] * 100) + '%';
+      dot.style.top = ((p.point[1] - crop[1]) / crop[3] * 100) + '%';
+      dot.setAttribute('aria-label', full(p.id));
+      dot.innerHTML = '<span class="lbl"></span>';
+      photo.append(dot);
+      const tag = document.createElement('button');
+      tag.type = 'button'; tag.dataset.pin = p.id; tag.dataset.index = i;
+      tag.style.setProperty('--c', C[p.kind]);
+      tag.innerHTML = '<i></i><span></span>';
+      names.append(tag);
+      els[p.id] = [dot, tag];
+    });
+    art.append(photo, names);
+    if (d.note) { const n = document.createElement('p'); n.className = 'dnote'; n.textContent = d.note; art.append(n); }
+    stage.append(art);
+  }
+  stage.querySelectorAll('[data-pin]').forEach(b => b.addEventListener('click', () => activate(b.dataset.pin)));
+  render();
+}
+
+function wiredIds() { return new Set(st.conns.flatMap(i => [scene.wires[i].from, scene.wires[i].to])); }
+
+/* 화면 갱신 */
+function render() {
+  const wired = wiredIds();
+  const hintIds = st.hint !== null ? [scene.wires[st.hint].from, scene.wires[st.hint].to] : [];
+  const labels = st.mode !== 'solo';
+  for (const [id, [dot, tag]] of Object.entries(els)) {
+    const p = pinById(id), idx = Number(tag.dataset.index);
+    for (const el of [dot, tag]) {
+      el.classList.toggle('wired', wired.has(id));
+      el.classList.toggle('hint', hintIds.includes(id));
+      el.setAttribute('aria-pressed', String(st.selected === id));
+      el.disabled = st.verified;
+    }
+    dot.querySelector('.lbl').textContent = labels ? p.label : '';
+    tag.querySelector('span').textContent = labels ? p.label : `핀 ${idx + 1}`;
+  }
+  $('count').firstChild.textContent = st.conns.length;
+  $('cancelBtn').hidden = !st.selected;
+  // 연결 목록
+  $('conns').replaceChildren(...st.conns.map(i => {
+    const w = scene.wires[i], li = document.createElement('li');
+    li.innerHTML = '<i></i><span></span><button type="button">선 빼기</button>';
+    li.querySelector('i').style.background = w.color;
+    li.querySelector('span').textContent = `${full(w.from)} ↔ ${full(w.to)}`;
+    li.querySelector('button').disabled = st.verified;
+    li.querySelector('button').addEventListener('click', () => remove(i));
+    return li;
+  }));
+  $('noConns').hidden = st.conns.length > 0;
+  const complete = st.conns.length === scene.wires.length;
+  $('preflight').disabled = !complete || st.verified;
+  $('preNote').hidden = complete;
+  $('preflight').querySelectorAll('input').forEach(c => { c.checked = st.checks.has(c.dataset.check); });
+  $('verifyBtn').disabled = !complete || st.checks.size < 3 || st.verified;
+  $('verifyBtn').textContent = st.verified ? '최종 확인 완료' : '전원 켜기 전 최종 확인';
+  $('undoBtn').disabled = !st.conns.length || st.verified;
+  $('hintBtn').disabled = st.verified || st.mode !== 'guide';
+  document.querySelectorAll('.modes button').forEach(b => {
+    b.setAttribute('aria-pressed', String(b.dataset.mode === st.mode));
+    b.classList.toggle('done', st.passed.has(b.dataset.mode));
+  });
+  $('modeExplain').textContent = {guide: '따라 하기: 연결할 두 곳이 빛나요.', labels: '이름만 보기: 핀 이름을 읽고 연결해요.', solo: '혼자 연결: 이름표 없이 위치와 색을 보고 연결해요.'}[st.mode];
+  requestAnimationFrame(drawWires);
+}
+
+function say(text, tone) { $('msg').textContent = text; $('status').dataset.tone = tone || 'normal'; }
+
+function center(id) {
+  const stage = $('stage').getBoundingClientRect();
+  const [dot] = els[id], r = dot.getBoundingClientRect();
+  return {x: r.left + r.width / 2 - stage.left, y: r.top + r.height / 2 - stage.top};
+}
+const curve = (a, b) => `M ${a.x} ${a.y} C ${a.x + 35} ${a.y + 70}, ${b.x - 35} ${b.y + 70}, ${b.x} ${b.y}`;
+function drawWires() {
+  const svg = $('wires'), ns = 'http://www.w3.org/2000/svg';
+  const add = (tag, attrs) => { const e = document.createElementNS(ns, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); svg.append(e); };
+  svg.replaceChildren();
+  for (const i of st.conns) {
+    const w = scene.wires[i], a = center(w.from), b = center(w.to);
+    add('path', {d: curve(a, b), stroke: 'white', 'stroke-width': 9, fill: 'none'});
+    add('path', {d: curve(a, b), stroke: w.color, 'stroke-width': 5, fill: 'none'});
+    add('circle', {cx: a.x, cy: a.y, r: 5, fill: w.color});
+    add('circle', {cx: b.x, cy: b.y, r: 5, fill: w.color});
+  }
+  if (st.hint !== null) {
+    const w = scene.wires[st.hint];
+    add('path', {d: curve(center(w.from), center(w.to)), stroke: w.color, 'stroke-width': 3, 'stroke-dasharray': '8 8', fill: 'none'});
+  }
+}
+
+/* 연결 규칙 (핀랩 connectionError와 같은 판단) */
+function connectionError(a, b) {
+  const from = pinById(a), to = pinById(b);
+  const exp = scene.wires.find(w => w.from === a || w.to === a);
+  const expPin = exp && pinById(exp.from === a ? exp.to : exp.from);
+  const fix = expPin ? ` ${from.label}은 이번 연습에서 ${expPin.label}과 연결해요.` : '';
+  const kinds = [from.kind, to.kind].sort().join('+');
+  if (kinds === 'ground+power') return `${from.label}와 ${to.label}을 연결하면 전원과 GND가 바로 만나 단락될 수 있어요.${fix} 검정 GND와 빨간 전원을 다시 구별해 보세요.`;
+  if (kinds === 'power+signal') return `${from.label}와 ${to.label}은 전원과 신호라서 역할이 달라요.${fix}`;
+  return `${from.label}와 ${to.label}은 이번 배선의 짝이 아니에요.${fix || ' 핀 이름과 신호 방향을 다시 확인해요.'}`;
+}
+function nextUnwired(list) { const i = scene.wires.findIndex((_, k) => !list.includes(k)); return i < 0 ? null : i; }
+
+function connect(a, b) {
+  st.checks.clear();
+  if (a === b) { st.selected = null; say('선택을 취소했어요. 다른 핀을 눌러 시작해요.'); return render(); }
+  const index = scene.wires.findIndex(w => pair(w.from, w.to) === pair(a, b));
+  if (index < 0) {
+    const exp = scene.wires.findIndex(w => w.from === a || w.to === a);
+    st.hint = st.mode === 'guide' && exp >= 0 ? exp : null;
+    st.selected = a;
+    say(connectionError(a, b), 'error');
+    return render();
+  }
+  if (st.conns.includes(index)) { st.selected = null; say('이미 연결된 선이에요. 아래 목록에서 선을 뺄 수 있어요.'); return render(); }
+  st.conns.push(index); st.selected = null;
+  st.hint = st.mode === 'guide' ? nextUnwired(st.conns) : null;
+  const done = st.conns.length === scene.wires.length;
+  say(`연결했어요. ${scene.wires[index].why}${done ? ' 이제 아래 세 가지 점검을 직접 확인해요.' : st.mode === 'guide' ? ' 다음 두 핀이 빛나고 있어요.' : ''}`);
+  render();
+}
+function activate(id) {
+  if (st.verified) { say('연결을 바꾸려면 먼저 처음부터를 누르세요.'); return; }
+  if (st.selected) return connect(st.selected, id);
+  st.selected = id; say(`${full(id)} 선택. 연결할 반대쪽 핀을 눌러요.`); render();
+}
+function remove(i) {
+  st.conns = st.conns.filter(k => k !== i); st.checks.clear(); st.selected = null;
+  st.hint = st.mode === 'guide' ? nextUnwired(st.conns) : null;
+  say('선 한 개를 뺐어요. 핀 이름과 역할을 다시 확인해요.'); render();
+}
+function reset(text) {
+  Object.assign(st, {conns: [], selected: null, verified: false, hint: st.mode === 'guide' ? 0 : null});
+  st.checks.clear();
+  say(text || (st.mode === 'guide' ? '빛나는 두 핀을 연결해 보세요. 검정 GND부터 시작해요.' : '선을 모두 정리했어요. 다시 연결해 보세요.'));
+  render();
+}
+
+document.querySelectorAll('.modes button').forEach(b => b.addEventListener('click', () => {
+  st.mode = b.dataset.mode;
+  reset({guide: '따라 하기: 빛나는 두 핀을 연결해요.', labels: '이름만 보기: 핀 이름을 읽고 도움 없이 연결해요.', solo: '혼자 연결: 핀 이름표 없이 위치와 색을 보고 연결해요.'}[st.mode]);
+}));
+$('hintBtn').addEventListener('click', () => {
+  const i = nextUnwired(st.conns);
+  if (i === null) return say('모두 연결했어요. 전원 전 점검을 확인해요.');
+  st.hint = i; say(`다음 연결: ${full(scene.wires[i].from)} → ${full(scene.wires[i].to)}. ${scene.wires[i].why}`); render();
+});
+$('cancelBtn').addEventListener('click', () => { st.selected = null; say('선택을 취소했어요.'); render(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && st.selected) { st.selected = null; say('선택을 취소했어요.'); render(); } });
+$('undoBtn').addEventListener('click', () => remove(st.conns[st.conns.length - 1]));
+$('resetBtn').addEventListener('click', () => reset());
+$('preflight').querySelectorAll('input').forEach(c => c.addEventListener('change', () => {
+  c.checked ? st.checks.add(c.dataset.check) : st.checks.delete(c.dataset.check);
+  say('전원을 켜기 전 확인 항목을 하나씩 읽고 체크해요.'); render();
+}));
+$('verifyBtn').addEventListener('click', () => {
+  st.verified = true; st.passed.add(st.mode); st.selected = null; st.hint = null; window.Sound && Sound.ok();
+  say(st.mode === 'solo' ? '혼자 연결하기까지 통과했어요! 실제로 꽂기 전에 선생님께 마지막 확인을 받아요.' : '모든 연결과 점검이 맞아요. 다음 단계에서 같은 부품을 다시 연결해 보세요.', 'success');
+  render();
+});
+$('zoom').addEventListener('change', e => { $('stage').style.width = (Number(e.target.value) * 100) + '%'; render(); });
+new ResizeObserver(() => requestAnimationFrame(drawWires)).observe($('stage'));
+$('sceneNote').textContent = scene.note;
+build();
+say('빛나는 두 핀을 연결해 보세요. 검정 GND부터 시작해요.');
+
+/* ===== 1~4단계: 핀랩 lesson-core.tsx의 CableLesson, ConnectionGuide, Boards, PinPractice를 옮김 ===== */
+const CREDIT = {
+  'images/pl-jumper-mm.webp': 'oomlout · CC BY-SA 2.0 · Wikimedia Commons',
+  'images/pl-jumper-mf.webp': 'Edwiyanto · CC BY-SA 4.0 · Wikimedia Commons',
+  'images/pl-jumper-ff.webp': 'oomlout · CC BY-SA 2.0 · Wikimedia Commons',
+  'images/pl-servo.webp': 'Suyash Dwivedi · CC BY-SA 4.0 · Wikimedia Commons',
+};
+/* 사진 확대 (빌드 후에는 CREDIT의 키와 사진 주소가 같은 data: 주소로 바뀌어 그대로 맞습니다) */
+function photoButton(src, alt) {
+  const b = document.createElement('button');
+  b.type = 'button'; b.setAttribute('aria-label', alt + ' 확대');
+  b.innerHTML = '<img alt=""><span class="zoomhint">확대</span>';
+  b.querySelector('img').src = src; b.querySelector('img').alt = alt;
+  b.addEventListener('click', () => {
+    $('zoomTitle').textContent = alt; $('zoomImg').src = src; $('zoomImg').alt = alt;
+    $('zoomCredit').textContent = CREDIT[src] || '';
+    $('zoomDlg').showModal();
+  });
+  return b;
+}
+$('zoomClose').addEventListener('click', () => $('zoomDlg').close());
+$('zoomDlg').addEventListener('click', e => { if (e.target === $('zoomDlg')) $('zoomDlg').close(); });
+document.querySelectorAll('[data-photo]').forEach(d => d.append(photoButton(d.dataset.photo, d.dataset.alt)));
+
+/* 확인 문제 */
+const QUIZ = {
+  cable: {q: '양쪽 모두 튀어나온 핀에 연결하려면 어떤 선이 필요할까요?', o: ['수–수', '암–수', '암–암'], a: 2, e: '튀어나온 핀을 받아 줄 구멍이 양쪽에 필요해요.'},
+  plug: {q: '점퍼선을 뺄 때 어디를 잡아야 할까요?', o: ['얇은 전선', '커넥터 몸체', '옆의 다른 부품'], a: 1, e: '전원을 분리한 뒤, 선 끝의 플라스틱 커넥터 몸체를 잡아요.'},
+  board: {q: '보드를 살펴볼 때 가장 먼저 맞춰 볼 것은?', o: ['사진과 같은 방향', '점퍼선의 길이', '책상 색깔'], a: 0, e: 'USB 단자 같은 기준점을 찾아 방향을 맞추면 핀 위치를 찾기 쉬워요.'},
+};
+const passed = new Set();
+function markPassed(step) { if (!passed.has(step)) { window.Sound && Sound.ok(); } passed.add(step); updateStepper(); }
+document.querySelectorAll('[data-quiz]').forEach(box => {
+  const qz = QUIZ[box.dataset.quiz], step = box.closest('[data-step]').dataset.step;
+  box.innerHTML = '<h2>잠깐, 확인해 볼까요?</h2><p></p><div class="opts"></div><p class="feedback" role="status" hidden></p>';
+  box.querySelector('p').textContent = qz.q;
+  const fb = box.querySelector('.feedback');
+  qz.o.forEach((text, i) => {
+    const b = document.createElement('button'); b.type = 'button'; b.textContent = text; b.setAttribute('aria-pressed', 'false');
+    b.addEventListener('click', () => {
+      box.querySelectorAll('.opts button').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+      const ok = i === qz.a;
+      fb.hidden = false; fb.classList.toggle('retry', !ok);
+      fb.innerHTML = `<strong>${ok ? '맞아요!' : '한 번 더 생각해 봐요.'}</strong> `; fb.append(qz.e);
+      if (ok) markPassed(step);
+    });
+    box.querySelector('.opts').append(b);
+  });
+});
+
+/* 1. 점퍼선 세 가지 */
+const cableData = [
+  {img: 'images/pl-jumper-mm.webp', title: '수–수', en: 'Male to Male', ends: '핀 + 핀', desc: '양쪽 모두 금속 핀이 튀어나와 있어요.', use: '양쪽 연결점이 모두 구멍일 때 사용해요. 예: 브레드보드의 구멍과 구멍.'},
+  {img: 'images/pl-jumper-mf.webp', title: '암–수', en: 'Female to Male', ends: '구멍 + 핀', desc: '한쪽은 구멍, 다른 한쪽은 금속 핀이에요.', use: '핀과 구멍을 이어 줄 때 사용해요. 예: 보드의 돌출 핀과 브레드보드.'},
+  {img: 'images/pl-jumper-ff.webp', title: '암–암', en: 'Female to Female', ends: '구멍 + 구멍', desc: '양쪽 모두 핀이 들어가는 구멍이에요.', use: '양쪽 연결점이 모두 돌출 핀일 때 사용해요. Robotbit 핀과 센서 핀을 이을 때 이 선을 써요. 모듈의 단자 모양을 먼저 확인해요.'},
+];
+cableData.forEach(c => {
+  const a = document.createElement('article'); a.className = 'cable';
+  const ph = document.createElement('div'); ph.className = 'ph';
+  ph.append(photoButton(c.img, `${c.title} 점퍼선 실물`));
+  const body = document.createElement('div');
+  body.innerHTML = `<h3><span></span> 케이블 <small></small></h3><p></p><button type="button" class="btn ghost" aria-expanded="false">언제 쓸까요?</button><p class="use" hidden></p>`;
+  body.querySelector('h3 span').textContent = c.title;
+  body.querySelector('h3 small').textContent = `${c.ends} · ${c.en}`;
+  body.querySelector('p').textContent = c.desc;
+  body.querySelector('.use').textContent = c.use;
+  body.querySelector('button').addEventListener('click', e => {
+    const open = e.currentTarget.getAttribute('aria-expanded') !== 'true';
+    e.currentTarget.setAttribute('aria-expanded', String(open)); body.querySelector('.use').hidden = !open;
+  });
+  a.append(ph, body); $('cables').append(a);
+});
+
+/* 2. 사진 가이드 (8단계) */
+const guide = [
+  {img: 'images/pl-board-power.webp', title: '전원을 먼저 분리해요', body: '보드 위쪽의 전원 스위치를 끄고 USB 선을 뽑아요. 전원이 들어온 채로 선을 바꾸지 않아요.'},
+  {img: 'images/pl-microbit-insert.webp', title: '마이크로비트의 앞면 방향을 확인해요', body: '사진처럼 LED와 A·B 버튼이 보이는 앞면을 확인하고, 금색 가장자리 단자가 아래쪽 슬롯을 향하게 해요.'},
+  {img: 'images/pl-microbit-insert.webp', title: '슬롯과 수직으로 맞춰 꽂아요', body: '마이크로비트 양쪽 윗부분을 잡고 슬롯과 일직선으로 맞춘 뒤 천천히 수직으로 눌러 꽂아요. 들어가지 않으면 힘을 멈추고 방향을 다시 확인해요.'},
+  {img: 'images/pl-jumper-mf.webp', title: '양 끝의 모양을 확인해요', body: '핀을 받아 줄 구멍이 있는지 살펴봐요. 핀과 핀을 서로 밀어 넣을 수는 없어요.'},
+  {img: 'images/pl-jumper-ff.webp', title: '커넥터 몸체를 잡아요', body: '선 끝의 플라스틱 몸체를 잡아요. 얇은 전선 부분을 잡고 당기지 않아요.'},
+  {img: 'images/pl-board-pins.webp', title: '핀과 구멍을 일직선으로 맞춰요', body: '옆 핀에 걸리지 않게 맞추고 천천히 밀어 넣어요. 들어가지 않으면 멈추고 모양을 다시 확인해요.'},
+  {img: 'images/device-real.webp', title: '위치와 접촉을 확인해요', body: '한 칸 옆에 꽂지 않았는지, 여러 핀이 닿지 않았는지 확인해요. 실제 배선은 선생님께 확인받아요.'},
+  {img: 'images/pl-jumper-ff.webp', title: '뺄 때도 몸체를 잡아요', body: '전원을 분리한 뒤 커넥터 몸체를 잡고 핀 방향으로 천천히 빼요. 세게 비틀거나 전선을 잡아당기지 않아요.'},
+];
+let gStep = 0, gTimer = null;
+guide.forEach((g, i) => {
+  const d = document.createElement('button'); d.type = 'button'; d.textContent = i + 1;
+  d.setAttribute('aria-label', `${i + 1}. ${g.title}`);
+  d.addEventListener('click', () => { stopGuide(); showGuide(i); });
+  $('gDots').append(d);
+});
+function showGuide(i) {
+  gStep = i; const g = guide[i];
+  $('gPhoto').replaceChildren(photoButton(g.img, g.title));
+  $('gTitle').textContent = g.title; $('gBody').textContent = g.body; $('gSpeech').textContent = '';
+  $('gCount').textContent = `${i + 1} / ${guide.length}`;
+  $('gPrev').disabled = i === 0; $('gNext').disabled = i === guide.length - 1;
+  [...$('gDots').children].forEach((d, k) => { if (k === i) d.setAttribute('aria-current', 'step'); else d.removeAttribute('aria-current'); });
+}
+function stopGuide() { clearInterval(gTimer); gTimer = null; $('gPlay').textContent = '순서대로 보기'; }
+$('gPrev').addEventListener('click', () => { stopGuide(); showGuide(gStep - 1); });
+$('gNext').addEventListener('click', () => { stopGuide(); showGuide(gStep + 1); });
+$('gPlay').addEventListener('click', () => {
+  if (gTimer) return stopGuide();
+  if (gStep === guide.length - 1) showGuide(0);
+  $('gPlay').textContent = '멈추기';
+  gTimer = setInterval(() => { if (gStep >= guide.length - 1) return stopGuide(); showGuide(gStep + 1); }, 6000 / Number($('gRate').value));
+});
+$('gRate').addEventListener('change', () => { if (gTimer) { stopGuide(); $('gPlay').click(); } });
+$('gSpeak').addEventListener('click', () => {
+  if (!('speechSynthesis' in window)) { $('gSpeech').textContent = '이 브라우저는 읽어주기를 지원하지 않아요. 설명을 읽어 주세요.'; return; }
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(guide[gStep].title + '. ' + guide[gStep].body);
+  u.lang = 'ko-KR'; u.rate = 0.85;
+  u.onerror = () => { $('gSpeech').textContent = '읽어주기를 사용할 수 없어요. 설명으로 따라 해 주세요.'; };
+  speechSynthesis.speak(u);
+});
+showGuide(0);
+
+/* 4. G·V·S 찾기 */
+const pinInfo = [
+  {short: 'G', label: 'GND', color: '검정', c: 'var(--gnd)', role: '회로의 기준점', detail: '입문 회로에서는 보통 전원 −와 연결해요.'},
+  {short: 'V', label: 'VCC', color: '빨강', c: 'var(--pwr)', role: '부품에 전원 공급', detail: '필요한 전압은 제품마다 달라요. P핀 줄은 3.3V, S1~S8 줄은 VM이에요.'},
+  {short: 'S', label: 'Signal', color: '노랑', c: 'var(--sig)', role: '신호가 오가는 곳', detail: '신호 핀에 전원을 임의로 넣지 않아요.'},
+];
+pinInfo.forEach(p => {
+  const a = document.createElement('article'); a.style.setProperty('--c', p.c);
+  a.innerHTML = '<b></b><span class="cname"></span><strong></strong><p></p>';
+  a.querySelector('b').textContent = p.short; a.querySelector('.cname').textContent = p.color;
+  a.querySelector('strong').textContent = p.label; a.querySelector('p').textContent = `${p.role}. ${p.detail}`;
+  $('gvs').append(a);
+});
+let target = 0, found = [], wrong = null;
+const hots = pinInfo.map((p, i) => {
+  const h = document.createElement('button'); h.type = 'button'; h.className = 'hot'; h.style.setProperty('--c', p.c);
+  Object.assign(h.style, {left: '10.6%', top: (19.1 + i * 4.45) + '%', width: '26%', height: '4.4%'});
+  h.setAttribute('aria-label', `왼쪽 ${p.color} ${p.label} 줄`);
+  h.addEventListener('click', () => pick(i));
+  $('pinPhoto').append(h); return h;
+});
+pinInfo.forEach((p, i) => {
+  const b = document.createElement('button'); b.type = 'button'; b.style.setProperty('--c', p.c);
+  b.innerHTML = '<i></i>'; b.append(`${p.short} · ${p.label}`);
+  b.addEventListener('click', () => pick(i)); $('textPins').append(b);
+});
+function pick(i) {
+  const fb = $('gameFeedback'); fb.hidden = false;
+  if (target === 3) { wrong = null; fb.classList.remove('retry'); fb.textContent = '세 줄을 모두 찾았어요. 실제 보드에서도 검정 G, 빨강 V, 노랑 S 순서로 확인해 보세요.'; return renderGame(); }
+  if (i === target) {
+    const p = pinInfo[i]; if (!found.includes(i)) found.push(i); wrong = null;
+    fb.classList.remove('retry'); fb.textContent = `${p.color} ${p.label} 줄이 맞아요. ${p.short}는 ${p.role}이에요.`;
+    if (target === 2) markPassed('4');
+    target = Math.min(3, target + 1);
+  } else {
+    wrong = i; fb.classList.add('retry');
+    fb.textContent = `선택한 곳은 ${pinInfo[i].color} ${pinInfo[i].short} 줄이에요. 지금은 ${pinInfo[target].color} ${pinInfo[target].label} 줄을 찾아보세요.`;
+  }
+  renderGame();
+}
+function renderGame() {
+  hots.forEach((h, i) => {
+    h.classList.toggle('correct', found.includes(i)); h.classList.toggle('wrong', wrong === i);
+    h.setAttribute('aria-pressed', String(found.includes(i)));
+    h.innerHTML = found.includes(i) ? `<span class="call">✓ ${pinInfo[i].short} · ${pinInfo[i].label}</span>` : '';
+  });
+  $('gameCount').textContent = `${Math.min(target, 3)} / 3`;
+  if (target < 3) { const p = pinInfo[target]; $('gameTitle').innerHTML = `<span class="target" style="--c:${p.c}">${p.color} ${p.short}</span> 줄을 찾아 눌러 보세요`; }
+  else $('gameTitle').textContent = '세 가지 핀 찾기 완료';
+}
+$('gameReset').addEventListener('click', () => { target = 0; found = []; wrong = null; $('gameFeedback').hidden = true; renderGame(); });
+renderGame();
+
+/* 단계 이동 */
+let curStep = 1;
+function updateStepper() {
+  document.querySelectorAll('[data-step-go]').forEach(b => {
+    if (b.dataset.stepGo === String(curStep)) b.setAttribute('aria-current', 'step'); else b.removeAttribute('aria-current');
+    b.classList.toggle('done', passed.has(b.dataset.stepGo) || (b.dataset.stepGo === '5' && st.passed.size > 0));
+  });
+  $('prevStep').disabled = curStep === 1;
+  $('nextStep').disabled = curStep === 5;
+}
+function goStep(n) {
+  curStep = Math.max(1, Math.min(5, n));
+  document.querySelectorAll('[data-step]').forEach(s => { s.hidden = s.dataset.step !== String(curStep); });
+  stopGuide(); if ('speechSynthesis' in window) speechSynthesis.cancel();
+  history.replaceState(null, '', '#step' + curStep);
+  updateStepper(); window.scrollTo({top: 0});
+  if (curStep === 5) requestAnimationFrame(drawWires);
+}
+document.querySelectorAll('[data-step-go]').forEach(b => b.addEventListener('click', () => goStep(Number(b.dataset.stepGo))));
+$('prevStep').addEventListener('click', () => goStep(curStep - 1));
+$('nextStep').addEventListener('click', () => goStep(curStep + 1));
+$('verifyBtn').addEventListener('click', updateStepper);
+goStep(Number((location.hash.match(/^#step([1-5])$/) || [0, 1])[1]));
+</script>
+<!-- LESSON:JS -->
+</body>
+</html>

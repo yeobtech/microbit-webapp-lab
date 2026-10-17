@@ -1,0 +1,1073 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>마이크로비트 웹앱 연결 실험실</title>
+<style>
+/* 페이지 기본 스타일. 공통 디자인(tools/lesson.css)이 이 층보다 우선합니다. */
+@layer base, page;
+@layer page{
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);font:16px/1.7 system-ui,'Malgun Gothic','Apple SD Gothic Neo',sans-serif}
+  img{max-width:100%;display:block}
+  a{color:var(--brand)}
+  button{font:inherit;cursor:pointer}
+  .wrap{margin:0 auto}
+  /* 머리 */
+  header.top{background:var(--card)}
+  header.top .wrap{display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .brand small{display:block;letter-spacing:0}
+  /* 단계 표시 */
+  .stepper{position:sticky;top:0;z-index:5;background:color-mix(in srgb,var(--bg) 92%,transparent)}
+  .stepper ol{list-style:none;display:flex;margin:0;overflow-x:auto}
+  .stepper li{flex:1;min-width:150px}
+  .stepper button{width:100%;display:flex;align-items:center;gap:10px;background:var(--card);text-align:left}
+  .stepper .num{flex:none;border-radius:50%;display:grid;place-items:center;font-weight:800}
+  .stepper .label{font-weight:700;line-height:1.3}
+  .stepper .label small{display:block;font-weight:500}
+  .stepper button[aria-current="step"]{border-color:var(--brand);background:var(--brand-soft)}
+  .stepper button[aria-current="step"] .num{background:var(--brand);color:#fff}
+  .stepper button:disabled{opacity:.55;cursor:not-allowed}
+  /* 시작 화면 — taste-skill 방향 「The sentence is the layout」(seed 288690798)
+   색은 확장보드 핀 색에서 가져옴: 보드의 검정(바탕) · S 신호 노랑(행동) · V 전원 빨강(띠 하나) */
+  body.on-cover header.top,body.on-cover .stepper,body.on-cover > footer{display:none}
+  .cover{--c-ground:#151816;--c-surface:#212622;--c-ink:#ecebe6;--c-muted:#b3b3ab;--c-signal:#f2b705;--c-signal-ink:#151816;--c-power:#c9352a;--c-power-ink:#ffffff;--c-bone:#ecebe6;--c-bone-ink:#151816;--s-small:clamp(.875rem,.85rem + .1vw,.9375rem);--s-body:clamp(1.0625rem,1rem + .25vw,1.1875rem);--s-lead:clamp(1.25rem,1.1rem + .7vw,1.625rem);--s-head:clamp(2.5rem,1.4rem + 4.6vw,6.5rem);--s-display:clamp(3.5rem,9vw,9rem);--m:clamp(16px,2vw,32px);--ease-out:cubic-bezier(.22,1,.36,1);--ease-soft:cubic-bezier(.25,.6,.3,1);--ease-in-out:cubic-bezier(.65,0,.35,1);background:var(--c-ground);color:var(--c-ink);font-family:'Pretendard Variable',Pretendard,system-ui,'Malgun Gothic',sans-serif;font-size:var(--s-body);line-height:1.55;letter-spacing:-.005em;word-break:keep-all}
+  .cover ::selection{background:var(--c-signal);color:var(--c-signal-ink)}
+  .cover a,.cover button{color:inherit;font:inherit}
+  .cover :focus-visible{outline:3px solid var(--c-signal);outline-offset:4px}
+  /* 첫 화면 */
+  .cv-hero{min-height:100vh;min-height:100svh;display:grid;grid-template-rows:auto 1fr auto;padding:24px var(--m) 32px}
+  .cv-nav{display:flex;align-items:baseline;justify-content:space-between;gap:24px;font-size:var(--s-small)}
+  .cv-nav .cv-word{font-weight:600;font-size:15px}
+  .cv-nav ul{list-style:none;display:flex;gap:clamp(16px,3vw,48px);margin:0;padding:0}
+  .cv-nav button,.cv-nav a{display:inline-block;line-height:1.4;font-size:var(--s-small);background:none;border:0;padding:6px 0;cursor:pointer;text-decoration:underline;text-decoration-color:transparent;text-underline-offset:.3em;transition:text-decoration-color .2s}
+  .cv-sentence{align-self:center;display:grid;grid-template-columns:auto auto;justify-content:start;align-items:end;column-gap:.28em;margin:0;font-size:var(--s-display);font-weight:650;line-height:.95;letter-spacing:-.045em}
+  .cv-line{display:block;white-space:nowrap}
+  .cv-l1{grid-row:1;grid-column:1}
+  .cv-l2{grid-row:2;grid-column:1}
+  .cv-slot{grid-row:1 / 3;grid-column:2;align-self:stretch;display:block;height:1.82em;aspect-ratio:12/7;overflow:hidden;margin-bottom:.06em;background:var(--c-surface)}
+  .cv-slot img{width:100%;height:100%;object-fit:cover;object-position:center;display:block}
+  .cv-foot{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:24px;align-items:end}
+  .cv-foot p{grid-column:1 / span 6;margin:0;max-width:34em}
+  .cv-start{grid-column:9 / -1;justify-self:end;display:inline-flex;align-items:center;gap:14px;min-height:56px;padding:0 32px;border:0;border-radius:0;background:var(--c-signal);color:var(--c-signal-ink)!important;font-weight:700!important;font-size:var(--s-lead)!important;cursor:pointer;transition:transform .12s var(--ease-out),background-color .2s}
+  .cv-start span{transition:transform .25s var(--ease-out)}
+  /* 대화 띠 */
+  .cv-talk{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:24px;padding:160px var(--m) 0}
+  .cv-talk-text{grid-column:1 / span 6}
+  .cv-talk h2,.cv-stages h2{margin:0;font-size:var(--s-head);font-weight:650;line-height:1;letter-spacing:-.04em}
+  .cv-talk .cv-say{margin:32px 0 0;font-size:var(--s-lead);line-height:1.4;max-width:22em}
+  .cv-device{margin:48px 0 0}
+  .cv-device img{width:100%;display:block}
+  .cv-device figcaption,.cv-shots figcaption{margin-top:10px}
+  .cv-live{grid-column:8 / -1;align-self:start;position:sticky;top:32px}
+  .cv-live label{display:block;font-weight:600;font-size:var(--s-lead);line-height:1.3}
+  .cv-live .cv-hint{margin:6px 0 18px;font-size:var(--s-small);color:var(--c-muted)}
+  .cv-range{display:flex;align-items:center;gap:16px}
+  .cv-range input{flex:1;height:44px}
+  .cv-range output{min-width:3ch;font-weight:700;font-variant-numeric:tabular-nums;font-size:var(--s-lead)}
+  .cv-lines{margin:28px 0 0;display:grid;gap:4px}
+  .cv-lines div{background:var(--c-surface);padding:14px 16px}
+  .cv-lines dt{font-size:var(--s-small);color:var(--c-muted)}
+  .cv-lines dd{margin:2px 0 0;font-weight:600}
+  .cover code{font-family:ui-monospace,Consolas,monospace;font-size:1rem;border:0;padding:0}
+  .cv-lines .cv-cmd code{color:var(--c-signal)}
+  .cv-shots{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:12px 0 0}
+  .cv-shots figure{margin:0}
+  .cv-shots img{width:100%;aspect-ratio:1/1;object-fit:cover;object-position:top;display:block;background:var(--c-surface)}
+  /* 세 단계 막대 */
+  .cv-stages{padding:160px var(--m) 0}
+  .cv-bar{display:flex;gap:6px;margin-top:64px;height:22vh;min-height:150px}
+  .cv-seg{flex:var(--g) 1 12%;min-width:0;display:flex;flex-direction:column;justify-content:space-between;align-items:flex-start;padding:20px;border:0;border-radius:0;text-align:left;cursor:pointer;background:var(--bg-seg);color:var(--ink-seg)!important;transition:transform .15s var(--ease-out),filter .2s}
+  .cv-seg b{font-size:clamp(20px,2vw,30px);font-weight:650;letter-spacing:-.02em;line-height:1.1}
+  .cv-seg strong{font-size:var(--s-lead);font-weight:700;line-height:1.2}
+  .cv-seg[data-c="signal"]{--bg-seg:var(--c-signal);--ink-seg:var(--c-signal-ink)}
+  .cv-seg[data-c="power"]{--bg-seg:var(--c-power);--ink-seg:var(--c-power-ink)}
+  .cv-seg[data-c="bone"]{--bg-seg:var(--c-bone);--ink-seg:var(--c-bone-ink)}
+  .cv-clauses{display:flex;gap:6px;margin:16px 0 0;padding:0;list-style:none}
+  .cv-clauses li{flex:var(--g) 1 12%;min-width:0;font-size:17px;line-height:1.45;padding-right:12px}
+  .cv-clauses li span{display:block;max-width:22ch}
+  /* 맺음 */
+  .cover .cv-close{padding:200px var(--m) 32px;display:grid;gap:40px;border:0;text-align:left;color:var(--c-ink);font-size:inherit}
+  .cv-close p.cv-name{margin:0;font-size:var(--s-head);font-weight:650;letter-spacing:-.04em;line-height:1}
+  .cv-close .cv-small{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:16px;font-size:var(--s-body);color:var(--c-muted)}
+  .cv-close .cv-small span{max-width:60ch}
+  .cv-pair{display:grid;grid-template-columns:1.4fr 1fr;gap:12px;max-width:640px}
+  .cv-pair img{width:100%;height:100%;aspect-ratio:auto;object-fit:cover}
+  .cv-close a{color:var(--c-ink);text-decoration:underline;text-underline-offset:.25em}
+  /* 손에 닿는 반응 */
+  .cv-start:active,.cv-seg:active{transform:scale(.97)}
+  @media (hover:hover) and (pointer:fine){
+    .cv-start:hover{background:#ffcb2e}
+    .cv-start:hover span{transform:translateX(6px)}
+    .cv-nav button:hover,.cv-nav a:hover{text-decoration-color:currentColor}
+    .cv-seg:hover{filter:brightness(1.06)}
+  }
+  /* 움직임: 스크립트가 있을 때만 숨겼다가 보여 줌 */
+  @media (prefers-reduced-motion:no-preference){
+    .js .cover .shutter{clip-path:inset(0 100% 0 0);transition:clip-path 1100ms var(--ease-in-out) 350ms}
+    .js .cover .shutter img{transform:scale(1.12);transition:transform 1500ms var(--ease-soft) 350ms}
+    .js .cover .shutter.is-in{clip-path:inset(0)}
+    .js .cover .shutter.is-in img{transform:none}
+    .js .cover [data-rise]{opacity:0;transform:translateY(24px);transition:opacity .7s var(--ease-out),transform .7s var(--ease-out);transition-delay:calc(var(--i,0) * 80ms)}
+    .js .cover [data-rise].is-in{opacity:1;transform:none}
+    .js .cover .cv-seg[data-rise]{transform:translateY(0) scaleY(.4);transform-origin:bottom}
+    .js .cover .cv-seg[data-rise].is-in{transform:none}
+    .cover .cv-device img{animation:cvDrift 18s var(--ease-in-out) infinite alternate}
+    .cover .cv-shots img{transition:opacity .35s}
+    .cover .cv-shots img.is-swap{opacity:.2}
+  }
+  @media (prefers-reduced-motion:reduce){
+    /* 움직임 줄이기 설정: 이동·확대는 빼고 천천히 나타나기만 */
+    .js .cover [data-rise],.js .cover .shutter{opacity:0;transition:opacity .6s ease;transition-delay:calc(var(--i,0) * 80ms)}
+    .js .cover [data-rise].is-in,.js .cover .shutter.is-in{opacity:1}
+    .cover .cv-shots img{transition:opacity .35s}
+    .cover .cv-shots img.is-swap{opacity:.2}
+  }
+  .cover figure img{height:auto}
+  @keyframes cvDrift{from{transform:scale(1)}to{transform:scale(1.06) translate(-1%,-1%)}}
+  .cover .cv-device{overflow:hidden}
+  /* 휴대폰 */
+  @media (max-width:760px){
+    .cv-nav ul{display:none}
+    .cv-sentence{font-size:13.5vw;line-height:1}
+    .cv-sentence{grid-template-columns:1fr}
+    .cv-l1{grid-row:1}
+    .cv-slot{grid-row:2;grid-column:1;width:100%;height:auto;margin:.18em 0}
+    .cv-l2{grid-row:3}
+    .cv-foot{grid-template-columns:1fr;gap:20px}
+    .cv-foot p,.cv-start{grid-column:1 / -1}
+    .cv-start{justify-self:stretch;justify-content:space-between}
+    .cv-talk{grid-template-columns:1fr;padding-top:112px}
+    .cv-talk-text,.cv-live{grid-column:1 / -1;position:static}
+    .cv-stages{padding-top:112px}
+    .cv-bar{flex-direction:column;height:auto;min-height:0}
+    .cv-seg{flex:none;min-height:calc(var(--g) * 1.3px + 72px)}
+    .cv-clauses{display:none}
+    .cv-seg .cv-m{display:block;font-size:16px;font-weight:500;margin-top:8px;max-width:26ch}
+    .cv-close{padding-top:120px}
+  }
+  @media (min-width:761px){
+    .cv-seg .cv-m{display:none}
+  }
+  /* 단계 머리 */
+  .stage-head p{margin:0}
+  /* 카드 */
+  .card-num{flex:none}
+  /* 1-1 작품 소개 */
+  .story{display:grid;grid-template-columns:repeat(4,1fr)}
+  .story article{border-radius:12px}
+  .story p{margin:0}
+  .photos{display:grid}
+  figure{margin:0}
+  figure img{width:100%;height:280px;object-fit:cover;object-position:center top}
+  figcaption{margin-top:6px}
+  /* 1-2 상태 화면 */
+  .tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+  .tabs button{background:var(--card);color:var(--ink);padding:8px 16px;font-weight:600}
+  .tabs button[aria-selected="true"]{background:var(--ink)}
+  .state{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:20px;align-items:start}
+  .state img{width:100%}
+  .rule{background:var(--warm-soft);margin:0 0 12px}
+  .rule b{display:block}
+  .cmds{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 0;padding:0;list-style:none}
+  .cmds li{background:var(--night);padding:7px 10px}
+  .cmd-note{color:var(--muted);margin-top:8px}
+  /* 1-3 체험판 */
+  .demo{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px}
+  .scene{background:linear-gradient(var(--night-2),var(--night));padding:16px;color:#e9eefb;position:relative;min-height:320px}
+  .scene svg{width:100%;height:auto;display:block}
+  .scene .msg{position:absolute;top:16px;left:0;right:0;text-align:center;font-weight:800;font-size:20px;opacity:0;transition:opacity .3s}
+  .pixels{display:flex;justify-content:center;gap:10px;margin-top:6px}
+  .pixels span{width:26px;height:26px;border-radius:50%;background:#2a2f3a;border:2px solid #3b4252;transition:background .15s,box-shadow .15s}
+  .servo-read{text-align:center;color:#b9c3dc;margin-top:8px}
+  .controls label{display:block;font-weight:700;margin:4px 0}
+  .controls .row{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+  .controls input[type=range]{flex:1}
+  .controls output{min-width:56px;text-align:right;font:700 15px ui-monospace,Consolas,monospace}
+  .hint{color:var(--muted);margin:-8px 0 14px}
+  .btn-a{display:inline-flex;align-items:center;gap:8px;border:2px solid var(--danger);color:var(--danger);background:transparent;padding:10px 16px;font-weight:800;user-select:none;touch-action:none}
+  .btn-a[aria-pressed="true"]{background:var(--danger);color:#fff}
+  .log{margin-top:14px;background:var(--night);padding:12px;font:13px/1.6 ui-monospace,Consolas,monospace;height:150px;overflow:auto}
+  .log .send{color:#ffd88a}
+  .log .info{color:#8fa3c9}
+  /* 1-4 흐름 */
+  .flow{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;align-items:stretch}
+  .flow button{background:var(--bg);color:var(--ink);padding:12px 8px;text-align:center;position:relative}
+  .flow button .ico{font-size:22px;display:block;font-weight:800}
+  .flow button b{display:block}
+  .flow button small{display:block;color:var(--muted)}
+  .flow button[aria-pressed="true"]{background:var(--brand-soft)}
+  .flow button:not(:last-child)::after{content:"→";position:absolute;right:-12px;top:50%;transform:translateY(-50%);color:var(--muted);font-weight:800;z-index:1}
+  .flow-detail{margin-top:14px;padding:16px;background:var(--bg);min-height:110px}
+  .flow-detail h3{margin:0 0 6px}
+  .flow-detail p{margin:0 0 6px}
+  code{font-family:ui-monospace,Consolas,monospace;background:var(--brand-soft);padding:1px 6px;font-size:.92em}
+  .msgs{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px}
+  .msgs article{padding:14px}
+  .msgs h3{margin:0 0 6px}
+  .msgs pre{margin:6px 0 0;background:var(--night);padding:10px;font-size:13px;white-space:pre-wrap;word-break:break-all}
+  /* 정리 */
+  .summary ol{margin:0;padding-left:22px}
+  .summary li{margin:6px 0}
+  .next{display:flex;justify-content:space-between;align-items:center;gap:12px}
+  .next button{background:var(--brand)}
+  .next button:disabled{background:var(--line);color:var(--muted);cursor:not-allowed}
+  .soon{color:var(--muted);font-size:14px}
+  footer{color:var(--muted);font-size:13px;text-align:center;padding:24px 0 40px;border-top:1px solid var(--line)}
+  /* 공통 버튼·표 */
+  .btn{background:var(--brand);padding:10px 16px}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  .small{color:var(--muted)}
+  .tbl{width:100%;border-collapse:collapse}
+  .tbl th,.tbl td{text-align:left;padding:10px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+  .wiring .tbl td:first-child,.wiring .tbl td:nth-child(2){white-space:nowrap}
+  kbd{font:600 13px ui-monospace,Consolas,monospace;background:var(--card)}
+  /* 2-1 배선 */
+  .practice-link{display:flex;align-items:center;justify-content:space-between;gap:12px;text-decoration:none;background:var(--brand-soft);padding:14px 18px;margin:0 0 16px;font-size:20px;font-weight:800}
+  .practice-link b{display:block;font-size:17px}
+  .practice-link small{display:block;font-weight:500}
+  .practice-link:hover{filter:brightness(.97)}
+  .wiring{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:20px;align-items:start}
+  .wiring svg,.why svg{width:100%;height:auto;display:block;background:var(--bg)}
+  .w-board{fill:#2d6b4f}
+  .w-title{fill:#e6f4ec;font-weight:800;font-size:15px}
+  .w-mb{fill:#1d2433}
+  .w-mbt{fill:#fff;font-weight:800;font-size:15px}
+  .w-small{fill:var(--muted)}
+  .w-light{fill:#b9c3dc}
+  .w-dark{fill:#1d2433;font-weight:700}
+  .w-usb{fill:#9aa3b2}
+  .w-pin{fill:#11151d;stroke:#ffd88a;stroke-width:2}
+  .w-pint{fill:#ffd88a;font-weight:800;font-size:13px}
+  .w-switch{fill:#e9a23b}
+  .w-part{fill:var(--card);stroke:var(--line);stroke-width:1.5}
+  .w-pt{fill:var(--ink);font-weight:800;font-size:14px}
+  .w-wire{fill:none;stroke-width:5;stroke-linecap:round}
+  .w-servo{stroke:#c0662b}
+  .w-neo{stroke:#2f9e5b}
+  .w-sonar{stroke:#2f5bd3}
+  .w-usbline{stroke:#7a8496}
+  .w-bad{stroke:var(--danger);stroke-dasharray:8 6}
+  .w-good{stroke:var(--ok)}
+  .w-tab-bad{fill:var(--card);stroke:var(--danger);stroke-width:2}
+  .w-badtext{fill:var(--danger)}
+  /* 2-2 단계 */
+  .steps{list-style:none;counter-reset:s;margin:0;padding:0;display:grid;gap:14px}
+  .steps li{counter-increment:s;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);gap:16px;align-items:center;padding:14px;background:var(--bg)}
+  .steps .step-text > b:first-child::before{content:counter(s);display:inline-grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--brand);color:#fff;font-size:14px;margin-right:8px}
+  .steps p{margin:6px 0 0}
+  .steps img{width:100%}
+  .warn-inline{color:var(--danger);font-weight:700;font-size:14px}
+  .copy-row{display:flex;align-items:center;gap:10px;margin-top:10px}
+  .code-view{margin-top:14px}
+  .code-view summary{cursor:pointer;font-weight:700}
+  .code-view pre{max-height:320px;overflow:auto;background:var(--night);padding:12px;font-size:12.5px}
+  /* 2-3 경고 */
+  .why{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px;align-items:start}
+  .why p{margin:0 0 10px}
+  .check{margin:10px 0 0;padding-left:0;list-style:none}
+  .check li{padding-left:28px;position:relative;margin:6px 0}
+  .check li::before{content:"✓";position:absolute;left:0;top:0;width:20px;height:20px;border-radius:50%;background:var(--brand-soft);color:var(--brand);font-weight:800;font-size:13px;display:grid;place-items:center}
+  .check.success li::before{background:color-mix(in srgb,var(--ok) 18%,transparent);color:var(--ok)}
+  .mini{margin-top:12px}
+  .mini img{height:auto;object-fit:contain}
+  /* 2-4 시험기 */
+  .tester{padding:16px;background:var(--bg)}
+  .tester-bar{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:14px}
+  .status{font-weight:700;padding:6px 12px;background:var(--line)}
+  .status.ok{background:color-mix(in srgb,var(--ok) 18%,transparent);color:var(--ok)}
+  .status.wait{background:var(--warm-soft);color:var(--warm)}
+  .status.bad{background:color-mix(in srgb,var(--danger) 15%,transparent);color:var(--danger)}
+  .tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+  .tile{background:var(--card);padding:10px 12px;transition:opacity .2s}
+  .tile span{display:block}
+  .tile small{color:var(--muted);margin-left:4px}
+  .tile.on{border-color:var(--warm);background:var(--warm-soft)}
+  .tiles.stale .tile{opacity:.45}
+  .tester-row{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:12px;margin-top:12px}
+  .tester-box{background:var(--card);padding:12px}
+  .tbtns{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+  .tbtns .btn{padding:8px 12px}
+  .health{margin:8px 0 2px}
+  @media (max-width:760px){
+    .story{grid-template-columns:1fr 1fr}
+    .photos,.state,.demo,.msgs,.wiring,.why,.steps li,.tester-row{grid-template-columns:1fr}
+    .tiles{grid-template-columns:repeat(2,1fr)}
+    .flow{grid-template-columns:repeat(3,1fr)}
+    .flow button:nth-child(3)::after{display:none}
+  }
+  @media (prefers-reduced-motion:reduce){
+    main *,header.top *,.stepper *{animation:none!important}
+  }
+}
+</style>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<!-- LESSON:CSS -->
+</head>
+<body class="on-cover">
+<div class="cover" id="cover" data-stage="0">
+  <section class="cv-hero" aria-labelledby="coverTitle">
+    <nav class="cv-nav" aria-label="바로가기">
+      <span class="cv-word">마이크로비트 웹앱 연결 실험실</span>
+      <ul>
+        <li><button type="button" data-go="1">작품 보기</button></li>
+        <li><button type="button" data-go="2">연결하기</button></li>
+        <li><button type="button" data-href="practice.html">활동지 실습</button></li>
+        <li><a href="wiring.html">배선 연습</a></li>
+      </ul>
+    </nav>
+    <h1 class="cv-sentence" id="coverTitle">
+      <span class="cv-line cv-l1" data-rise style="--i:0">마이크로비트와</span>
+      <span class="cv-line cv-l2" data-rise style="--i:1">웹앱 연동 교육</span>
+      <span class="cv-slot shutter" aria-hidden="true"><img src="images/mb-front-strip.webp" alt="" width="1200" height="700"></span>
+    </h1>
+    <div class="cv-foot">
+      <p data-rise style="--i:2">마이크로비트가 보낸 센서값을 웹앱이 읽고 판단해요. 웹앱이 돌려보낸 명령으로 서보모터와 네오픽셀이 움직여요.</p>
+      <button type="button" class="cv-start" data-go="1" data-rise style="--i:3">시작하기 <span aria-hidden="true">→</span></button>
+    </div>
+  </section>
+
+  <section class="cv-talk" aria-labelledby="cvTalkTitle">
+    <div class="cv-talk-text">
+      <h2 id="cvTalkTitle" data-rise>숫자 한 줄로 대화해요</h2>
+      <p class="cv-say" data-rise style="--i:1">마이크로비트는 0.2초마다 센서값 여덟 개를 쉼표로 이어 보내요. 웹앱은 그 줄을 읽고, 상태가 바뀔 때만 짧은 명령을 돌려보내요.</p>
+      <figure class="cv-device" data-rise style="--i:2">
+        <div class="cv-pair"><img src="images/mb-v2-back.webp" alt="수업에서 쓰는 마이크로비트 V2 보드" width="1200" height="800" loading="lazy"><img src="images/pl-microbit-insert.webp" alt="마이크로비트를 꽂은 Robotbit 확장보드" width="572" height="434" loading="lazy"></div>
+        <figcaption>마이크로비트 V2와, 그것을 꽂는 Robotbit 확장보드. 이 보드가 0.2초마다 오른쪽 같은 줄을 보내요.</figcaption>
+      </figure>
+    </div>
+    <div class="cv-live" data-rise style="--i:1">
+      <label for="cvLight">밝기 센서를 손으로 가려 보세요</label>
+      <p class="cv-hint">막대를 왼쪽으로 옮기면 어두워져요. 50보다 어두우면 켜지고, 80보다 밝아지면 꺼져요.</p>
+      <div class="cv-range"><input type="range" id="cvLight" min="0" max="255" value="200"><output id="cvLightOut" for="cvLight">200</output></div>
+      <dl class="cv-lines">
+        <div><dt>마이크로비트가 보낸 줄</dt><dd><code id="cvLine">D,32,6,200,24,0,0,2,-1</code></dd></div>
+        <div><dt>웹앱의 판단</dt><dd id="cvJudge">밝아요. 등불은 꺼진 채로 있어요.</dd></div>
+        <div class="cv-cmd"><dt>웹앱이 돌려보낸 명령</dt><dd id="cvCmd">보낼 명령 없음</dd></div>
+      </dl>
+      <div class="cv-shots">
+        <figure><img id="cvShot" src="images/lantern-day.webp" alt="덮개가 닫히고 불이 꺼진 등불 화면" width="452" height="356"><figcaption>웹앱 화면</figcaption></figure>
+        <figure><img src="images/gm-5-dashboard.webp" alt="실제 장치를 연결했을 때의 센서 대시보드" width="601" height="649" loading="lazy"><figcaption>실제 연결된 대시보드</figcaption></figure>
+      </div>
+    </div>
+  </section>
+
+  <section class="cv-stages" aria-labelledby="cvStagesTitle">
+    <h2 id="cvStagesTitle" data-rise>세 단계로 만들어요</h2>
+    <div class="cv-bar" role="list">
+      <button type="button" class="cv-seg" role="listitem" data-c="signal" style="--g:10" data-go="1" data-rise><b>약 10분</b><strong>작품 보기</strong><span class="cv-m">먼저, 선생님 작품을 보고 체험판을 움직여 봐요.</span></button>
+      <button type="button" class="cv-seg" role="listitem" data-c="power" style="--g:20;--i:1" data-go="2" data-rise><b>약 20분</b><strong>연결하기</strong><span class="cv-m">다음으로, 공통 코드를 넣고 웹앱과 연결해요.</span></button>
+      <button type="button" class="cv-seg" role="listitem" data-c="bone" style="--g:90;--i:2" data-href="practice.html" data-rise><b>두 차시</b><strong>활동지 실습</strong><span class="cv-m">마지막으로, 활동지대로 내 웹앱을 만들고 조원과 나눠요.</span></button>
+    </div>
+    <ul class="cv-clauses" aria-hidden="true">
+      <li style="--g:10"><span>먼저, 선생님 작품을 보고 체험판을 움직여 봐요.</span></li>
+      <li style="--g:20"><span>다음으로, 공통 코드를 넣고 웹앱과 연결해요.</span></li>
+      <li style="--g:90"><span>마지막으로, 활동지대로 내 웹앱을 만들고 조원과 나눠요.</span></li>
+    </ul>
+  </section>
+
+  <footer class="cv-close">
+    <p class="cv-name" data-rise>마이크로비트 웹앱 연결 실험실</p>
+    <div class="cv-small"><span>사진: Les Pounder (<a href="https://commons.wikimedia.org/w/index.php?curid=67257007">원본</a>, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC BY-SA 2.0</a>), SimonWaldherr (<a href="https://commons.wikimedia.org/wiki/File:BBC_micro_bit_v2.jpg">원본</a>, <a href="https://creativecommons.org/licenses/by/4.0">CC BY 4.0</a>), 확장보드 사진은 핀랩 자료. 모두 잘라서 썼어요.</span><a href="wiring.html">배선 따로 연습하기</a></div>
+  </footer>
+</div>
+<header class="top"><div class="wrap">
+  <div class="brand"><button type="button" class="brand-home" data-go="0" title="처음 화면으로">마이크로비트 웹앱 연결 실험실</button><small>실제 장치와 웹 화면이 서로 반응하는 발명품 만들기</small></div>
+</div></header>
+
+<nav class="stepper" aria-label="수업 단계"><div class="wrap"><ol>
+  <li><button type="button" data-go="1" aria-current="step"><span class="num">1</span><span class="label">작품 보기<small>우리가 만든 결과물</small></span></button></li>
+  <li><button type="button" data-go="2"><span class="num">2</span><span class="label">연결하기<small>마이크로비트 준비와 연결</small></span></button></li>
+  <li><button type="button" data-href="practice.html"><span class="num">3</span><span class="label">활동지 실습<small>내 웹앱 만들기 · 새 페이지</small></span></button></li>
+</ol></div></nav>
+
+<main class="wrap">
+<div id="stage1" data-stage="1">
+  <section class="stage-head">
+    <h1>먼저 선생님 작품을 살펴봐요</h1>
+    <p>먼저 선생님이 만든 작품 「안전한 밤길 등불」을 살펴봅니다. 장치와 웹앱이 어떻게 서로 반응하는지 직접 눌러 보세요.</p>
+  </section>
+
+  <!-- 1-1 -->
+  <section class="card" aria-labelledby="c11">
+    <div class="card-head"><span class="card-num">1-1</span><h2 id="c11">작품 소개: 안전한 밤길 등불</h2></div>
+    <p class="lead">가방에 다는 등불입니다. 주변이 어두워지면 스스로 덮개를 열고 빛을 냅니다.</p>
+    <div class="story">
+      <article><span class="tag">문제</span><h3>밤길이 어두워요</h3><p>골목길이 어두우면 발밑이 잘 보이지 않고 무섭습니다.</p></article>
+      <article><span class="tag">아이디어</span><h3>어두우면 켜지는 등불</h3><p>빛 센서로 어두워진 것을 알아채고 자동으로 불을 켭니다.</p></article>
+      <article><span class="tag">장치</span><h3>서보모터 + 네오픽셀</h3><p>서보모터가 덮개를 열고, 네오픽셀 6개가 무지개색으로 빛납니다.</p></article>
+      <article><span class="tag">화면</span><h3>웹앱 대시보드</h3><p>센서값 8가지가 실시간으로 보이고, 화면 속 등불도 함께 움직입니다.</p></article>
+    </div>
+    <div class="photos">
+      <figure><img src="images/device-real.webp" alt="Robotbit에 꽂은 마이크로비트, 초음파센서, 네오픽셀 줄을 손에 든 실제 장치"><figcaption>실제 장치: 마이크로비트 + Robotbit + 초음파센서 + 네오픽셀</figcaption></figure>
+      <figure><img src="images/app-full.webp" alt="안전한 밤길 등불 웹앱 화면. 왼쪽에 등불 그림과 센서 카드, 오른쪽에 조작판과 통신 기록이 있다"><figcaption>웹앱 화면: 제미나이로 만든 「안전한 밤길 등불」</figcaption></figure>
+      <figure><img src="images/gm-5-dashboard.webp" alt="실제 장치를 연결했을 때의 센서 대시보드" width="601" height="649"><figcaption>실제 연결된 대시보드: 센서 숫자가 실시간으로 바뀌어요</figcaption></figure>
+    </div>
+  </section>
+
+  <!-- 1-2 -->
+  <section class="card" aria-labelledby="c12">
+    <div class="card-head"><span class="card-num">1-2</span><h2 id="c12">상황에 따라 바뀌는 모습</h2></div>
+    <p class="lead">실제 웹앱을 캡처한 화면입니다. 상황을 눌러서 어떤 조건에서 어떤 명령이 나가는지 확인하세요.</p>
+    <div class="tabs" role="tablist" aria-label="상황 선택">
+      <button type="button" role="tab" data-state="day" aria-selected="true">① 밝을 때</button>
+      <button type="button" role="tab" data-state="night" aria-selected="false">② 어두워지면</button>
+      <button type="button" role="tab" data-state="walk" aria-selected="false">③ 걸어가며 흔들리면</button>
+      <button type="button" role="tab" data-state="warning" aria-selected="false">④ A 버튼을 누르면</button>
+    </div>
+    <div class="state" role="tabpanel">
+      <img id="stateImg" src="images/lantern-day.webp" alt="">
+      <div>
+        <div class="rule"><b id="stateCond"></b><span id="stateDesc"></span></div>
+        <strong>웹앱이 마이크로비트에 보내는 명령</strong>
+        <ul class="cmds" id="stateCmds"></ul>
+        <p class="cmd-note" id="stateNote"></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 1-3 -->
+  <section class="card" aria-labelledby="c13">
+    <div class="card-head"><span class="card-num">1-3</span><h2 id="c13">직접 체험하기</h2></div>
+    <p class="lead">장치가 없어도 괜찮아요. 슬라이더와 버튼으로 센서값을 바꾸면, 웹앱이 판단해서 명령을 보냅니다.</p>
+    <div class="demo">
+      <div class="scene" aria-live="polite">
+        <div class="msg" id="demoMsg"></div>
+        <svg viewBox="0 0 300 220" role="img" aria-label="등불 그림. 서보모터 각도에 따라 덮개가 열리고 네오픽셀 색으로 빛난다">
+          <defs><radialGradient id="glow"><stop offset="0" stop-color="#ffd27a" stop-opacity=".9"/><stop offset="1" stop-color="#ffd27a" stop-opacity="0"/></radialGradient></defs>
+          <circle id="demoGlow" cx="150" cy="135" r="95" fill="url(#glow)" opacity="0"/>
+          <rect x="110" y="70" width="80" height="120" rx="14" fill="#b8641f"/>
+          <rect id="demoLight" x="124" y="88" width="52" height="84" rx="8" fill="#3a3f4b"/>
+          <g id="demoCover" style="transform-origin:110px 70px;transition:transform .5s">
+            <rect x="104" y="58" width="92" height="16" rx="6" fill="#7a3d12"/>
+          </g>
+        </svg>
+        <div class="pixels" id="demoPixels" aria-label="네오픽셀 6개"><span></span><span></span><span></span><span></span><span></span><span></span></div>
+        <div class="servo-read">서보모터 <b id="demoServo">0°</b> · 덮개 <b id="demoCoverText">닫힘</b></div>
+      </div>
+      <div class="controls">
+        <label for="inBright">밝기 센서</label>
+        <div class="row"><span aria-hidden="true">어둠</span><input id="inBright" type="range" min="0" max="255" value="200"><span aria-hidden="true">밝음</span><output id="outBright" for="inBright">200</output></div>
+        <p class="hint">50보다 어두워지면 켜지고, 80보다 밝아지면 꺼집니다.</p>
+        <label for="inShake">흔들림 센서</label>
+        <div class="row"><span aria-hidden="true">가만히</span><input id="inShake" type="range" min="0" max="2000" value="0" step="10"><span aria-hidden="true">많이</span><output id="outShake" for="inShake">0</output></div>
+        <p class="hint">어두울 때 500보다 많이 흔들리면 빛이 빙글빙글 돕니다.</p>
+        <button type="button" class="btn-a" id="inBtnA" aria-pressed="false">A 버튼 (누르고 있기)</button>
+        <div class="log" id="demoLog" aria-label="보낸 명령 기록"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 1-4 -->
+  <section class="card" aria-labelledby="c14">
+    <div class="card-head"><span class="card-num">1-4</span><h2 id="c14">어떻게 서로 반응할까?</h2></div>
+    <p class="lead">데이터가 한 바퀴 도는 길입니다. 칸을 하나씩 눌러 보세요.</p>
+    <div class="flow" id="flow">
+      <button type="button" data-i="0" aria-pressed="true"><span class="ico">1</span><b>센서</b><small>빛·흔들림·버튼</small></button>
+      <button type="button" data-i="1" aria-pressed="false"><span class="ico">2</span><b>마이크로비트</b><small>값을 읽어 보냄</small></button>
+      <button type="button" data-i="2" aria-pressed="false"><span class="ico">3</span><b>USB 선</b><small>글자를 실어 나름</small></button>
+      <button type="button" data-i="3" aria-pressed="false"><span class="ico">4</span><b>웹앱</b><small>조건을 판단</small></button>
+      <button type="button" data-i="4" aria-pressed="false"><span class="ico">5</span><b>명령</b><small>다시 USB로</small></button>
+      <button type="button" data-i="5" aria-pressed="false"><span class="ico">6</span><b>서보·네오픽셀</b><small>실제로 움직임</small></button>
+    </div>
+    <div class="flow-detail" id="flowDetail" aria-live="polite"></div>
+    <div class="msgs">
+      <article><h3>마이크로비트 → 웹앱 (0.2초마다)</h3><p>센서값 8개를 쉼표로 이어서 한 줄로 보냅니다.</p><pre>D,거리,흔들림,밝기,온도,A,B,앞뒤,좌우
+D,12,30,24,25,0,0,3,-2</pre></article>
+      <article><h3>웹앱 → 마이크로비트 (필요할 때만)</h3><p>판단 결과에 따라 짧은 명령을 보냅니다.</p><pre>S,90       서보모터 90도
+L,255,0,0  네오픽셀 전체 빨강
+R          무지개색   T  한 칸 돌리기</pre></article>
+    </div>
+  </section>
+
+  <!-- 정리 -->
+  <section class="card summary" aria-labelledby="c15">
+    <div class="card-head"><span class="card-num">정리</span><h2 id="c15">기억할 것 세 가지</h2></div>
+    <ol>
+      <li><b>마이크로비트는 센서값을 보내고, 받은 명령대로 움직입니다.</b> 스스로 판단하지 않습니다.</li>
+      <li><b>“언제 움직일지”는 웹앱이 판단합니다.</b> 그래서 웹앱만 바꾸면 전혀 다른 발명품이 됩니다.</li>
+      <li><b>둘은 USB 선으로 짧은 글자를 주고받습니다.</b> 서로 정한 약속(통신 규칙)을 지켜야 알아듣습니다.</li>
+    </ol>
+  </section>
+
+  <div class="next">
+    <span class="soon">다음 단계: 마이크로비트와 연결하는 방법</span>
+    <button type="button" data-go="2">2단계로 →</button>
+  </div>
+</div>
+
+<div id="stage2" data-stage="2" hidden>
+  <section class="stage-head">
+    <h1>마이크로비트를 웹앱과 연결해요</h1>
+    <p>부품을 연결하고, 공통 코드를 넣고, 웹앱과 이어 봅니다. 순서대로 따라 하세요. 마지막 연결 시험에서 숫자가 움직이면 성공입니다.</p>
+  </section>
+
+  <!-- 2-1 -->
+  <section class="card" aria-labelledby="c21">
+    <div class="card-head"><span class="card-num">2-1</span><h2 id="c21">준비물과 배선</h2></div>
+    <p class="lead">전원을 끈 상태에서 연결하세요. 핀 이름은 색보다 글자를 보고 확인합니다.</p>
+    <a class="practice-link" href="wiring.html">
+      <span><b>배선 연습 페이지 열기</b><small>실물 사진 위에서 초음파센서·서보모터·네오픽셀 선 10개를 먼저 연결해 봅니다.</small></span>
+      <span aria-hidden="true">→</span>
+    </a>
+    <div class="wiring">
+      <svg viewBox="0 0 640 330" role="img" aria-label="배선 그림. Robotbit의 S1에 서보모터, P15에 네오픽셀, P14와 P13에 초음파센서를 연결하고 마이크로비트 USB를 노트북에 연결한다">
+        <rect x="200" y="70" width="240" height="190" rx="16" class="w-board"/>
+        <text x="320" y="96" class="w-title" text-anchor="middle">Robotbit 확장보드</text>
+        <rect x="245" y="112" width="150" height="70" rx="8" class="w-mb"/>
+        <text x="320" y="142" class="w-mbt" text-anchor="middle">마이크로비트</text>
+        <text x="320" y="162" class="w-small w-light" text-anchor="middle">LED 면이 앞으로</text>
+        <rect x="292" y="40" width="56" height="34" rx="6" class="w-usb"/><text x="320" y="62" class="w-small w-dark" text-anchor="middle">USB</text>
+        <line x1="320" y1="40" x2="320" y2="12" class="w-wire w-usbline"/><text x="330" y="18" class="w-small">노트북으로</text>
+        <rect x="212" y="200" width="44" height="40" rx="6" class="w-pin"/><text x="234" y="225" class="w-pint" text-anchor="middle">S1</text>
+        <rect x="384" y="192" width="48" height="22" rx="5" class="w-pin"/><text x="408" y="208" class="w-pint" text-anchor="middle">P15</text>
+        <rect x="384" y="220" width="48" height="22" rx="5" class="w-pin"/><text x="408" y="236" class="w-pint" text-anchor="middle">P13·14</text>
+        <rect x="406" y="112" width="26" height="40" rx="5" class="w-switch"/><text x="452" y="137" class="w-small">전원 스위치</text>
+        <path d="M212 220 H120" class="w-wire w-servo"/><rect x="30" y="196" width="90" height="48" rx="8" class="w-part"/><text x="75" y="217" class="w-pt" text-anchor="middle">서보모터</text><text x="75" y="235" class="w-small" text-anchor="middle">갈·빨·주</text>
+        <path d="M432 203 H520" class="w-wire w-neo"/><rect x="520" y="182" width="104" height="44" rx="8" class="w-part"/><text x="572" y="202" class="w-pt" text-anchor="middle">네오픽셀 6개</text><text x="572" y="219" class="w-small" text-anchor="middle">DIN → P15</text>
+        <path d="M432 231 H470 V290 H520" class="w-wire w-sonar"/><rect x="520" y="262" width="104" height="56" rx="8" class="w-part"/><text x="572" y="284" class="w-pt" text-anchor="middle">초음파센서</text><text x="572" y="302" class="w-small" text-anchor="middle">Trig P14 · Echo P13</text>
+      </svg>
+      <table class="tbl">
+        <thead><tr><th>부품</th><th>연결 위치</th><th>주의</th></tr></thead>
+        <tbody>
+          <tr><td>서보모터</td><td><b>S1</b></td><td>마이크로비트의 P1이 아닙니다.</td></tr>
+          <tr><td>네오픽셀 6개</td><td><b>P15</b></td><td>Robotbit에 붙은 LED(P16)와 다릅니다.</td></tr>
+          <tr><td>초음파센서</td><td>Trig <b>P14</b>, Echo <b>P13</b></td><td>Trig와 Echo를 바꾸면 거리가 -1로 나옵니다.</td></tr>
+          <tr><td>배터리</td><td>Robotbit 스위치</td><td>서보를 쓰려면 꼭 켜세요.</td></tr>
+          <tr><td>USB 선</td><td>마이크로비트 → 노트북</td><td>충전 전용 선은 안 됩니다. Surface는 USB-C 젠더 필요.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 2-2 -->
+  <section class="card" aria-labelledby="c22">
+    <div class="card-head"><span class="card-num">2-2</span><h2 id="c22">공통 코드 넣기 (메이크코드)</h2></div>
+    <p class="lead">모든 친구의 마이크로비트에 똑같은 코드를 넣습니다. 이 코드는 센서값을 보내고, 받은 명령대로 움직이기만 합니다.</p>
+    <ol class="steps">
+      <li><div class="step-text"><b>새 프로젝트 만들기</b><p><a href="https://makecode.microbit.org" target="_blank" rel="noopener">makecode.microbit.org</a>에 들어가서 <b>새 프로젝트</b>를 누르고 이름을 정합니다.</p></div><img src="images/mk-1-new.webp" alt="메이크코드 첫 화면. 새 프로젝트 카드에 주황 테두리"></li>
+      <li><div class="step-text"><b>확장 누르기</b><p>블록 목록 아래쪽의 <b>확장</b>을 누릅니다.</p></div><img src="images/mk-2-ext-btn.webp" alt="블록 목록의 확장 항목에 주황 테두리"></li>
+      <li><div class="step-text"><b>robotbit 하나만 추가</b><p>검색 칸에 <code>robotbit</code>를 쓰고 KittenBot의 <b>robotbit</b>를 누릅니다. Neopixel 블록도 함께 들어옵니다.</p><p class="warn-inline">neopixel을 따로 추가하지 마세요. “호환되지 않습니다” 창이 뜹니다.</p></div><img src="images/mk-3-robotbit.webp" alt="확장 프로그램 검색 결과. robotbit 카드"></li>
+      <li><div class="step-text"><b>JavaScript 탭으로 바꾸기</b><p>위쪽 가운데의 <b>JavaScript</b>를 누릅니다.</p></div><img src="images/mk-4-js-tab.webp" alt="블록과 JavaScript 전환 버튼 중 JavaScript에 주황 테두리"></li>
+      <li><div class="step-text"><b>코드를 모두 바꾸기</b><p>편집 칸을 누르고 <kbd>Ctrl</kbd>+<kbd>A</kbd>로 모두 고른 뒤, 아래 버튼으로 복사한 코드를 붙여넣습니다. 아래쪽 <b>문제</b>가 0개인지 확인하세요.</p><div class="copy-row"><button type="button" class="btn" id="copyFirmware">공통 코드 복사</button><span id="copyMsg" class="small" aria-live="polite"></span></div></div><img src="images/mk-5-code.webp" alt="JavaScript 편집기에 공통 코드가 들어간 화면"></li>
+      <li><div class="step-text"><b>다운로드</b><p><b>다운로드</b>를 눌러 마이크로비트에 넣습니다. 마이크로비트 LED에 <b>체크 표시</b>가 나오면 준비 완료입니다.</p></div><img src="images/mk-6-download.webp" alt="왼쪽 아래 다운로드 버튼에 주황 테두리"></li>
+    </ol>
+    <details class="code-view"><summary>공통 코드 보기</summary><pre id="firmwareView"></pre></details>
+  </section>
+
+  <!-- 2-3 -->
+  <section class="card alert-card" aria-labelledby="c23">
+    <div class="card-head"><span class="card-num danger">2-3</span><h2 id="c23">꼭! 메이크코드 탭 닫기</h2></div>
+    <p class="lead">다운로드가 끝나면 메이크코드 탭을 닫으세요. 이 단계를 빼먹으면 숫자가 깨집니다.</p>
+    <div class="why">
+      <svg viewBox="0 0 560 200" role="img" aria-label="마이크로비트가 보낸 글자를 메이크코드 탭과 웹앱이 나눠 가져서, 웹앱에는 글자가 빠진 줄이 도착하는 그림">
+        <rect x="10" y="70" width="120" height="60" rx="10" class="w-mb"/><text x="70" y="98" class="w-mbt" text-anchor="middle">마이크로비트</text><text x="70" y="117" class="w-small w-light" text-anchor="middle">D,12,30,24,…</text>
+        <path d="M130 100 H200" class="w-wire w-usbline"/>
+        <path d="M200 100 C240 100 240 40 290 40" class="w-wire w-bad"/><path d="M200 100 C240 100 240 160 290 160" class="w-wire w-good"/>
+        <rect x="290" y="14" width="250" height="54" rx="10" class="w-tab-bad"/><text x="415" y="37" class="w-pt" text-anchor="middle">열려 있는 메이크코드 탭</text><text x="415" y="56" class="w-small" text-anchor="middle">글자 일부를 몰래 가져감</text>
+        <rect x="290" y="132" width="250" height="54" rx="10" class="w-part"/><text x="415" y="155" class="w-pt" text-anchor="middle">내 웹앱</text><text x="415" y="174" class="w-small w-badtext" text-anchor="middle">D,1,30,2,25,0,,3-2 ← 깨짐</text>
+      </svg>
+      <div>
+        <p>마이크로비트가 보낸 글자를 <b>메이크코드 탭도 함께 읽어 갑니다.</b> 그러면 웹앱에는 쉼표나 숫자가 빠진 줄이 도착합니다.</p>
+        <p>숫자가 짧아져도 개수는 맞을 수 있어서(예: <code>444</code> → <code>44</code>) 웹앱이 <b>틀린 값으로 판단</b>할 수 있습니다.</p>
+        <ul class="check">
+          <li>다운로드가 끝나면 메이크코드 탭을 닫습니다.</li>
+          <li>탭을 닫은 뒤 USB를 한 번 뺐다가 다시 꽂습니다.</li>
+          <li>코드를 고쳐서 다시 넣을 때마다 반복합니다.</li>
+        </ul>
+        <figure class="mini"><img src="images/mk-7-more.webp" alt="다운로드 옆 점 세 개 메뉴. 장치 연결, 파일로 다운로드, 도움말"><figcaption>다운로드 옆 <b>…</b> 메뉴에서 장치 연결 상태를 바꿀 수 있습니다. 가장 확실한 방법은 탭을 닫는 것입니다.</figcaption></figure>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2-4 -->
+  <section class="card" aria-labelledby="c24">
+    <div class="card-head"><span class="card-num">2-4</span><h2 id="c24">연결 시험하기</h2></div>
+    <p class="lead">이 페이지에서 바로 시험합니다. <b>USB 연결</b>을 누르고, 뜨는 창에서 마이크로비트 포트(USB 직렬 장치, COM 번호)를 고른 뒤 <b>연결</b>을 누르세요.</p>
+    <div class="tester">
+      <div class="tester-bar">
+        <button type="button" class="btn" id="tConnect">USB 연결</button>
+        <button type="button" class="btn ghost" id="tDisconnect" disabled>연결 해제</button>
+        <span class="status" id="tStatus" role="status">연결 전</span>
+      </div>
+      <div class="tiles" id="tTiles"></div>
+      <div class="tester-row">
+        <div class="tester-box">
+          <strong>장치 움직여 보기</strong>
+          <div class="tbtns">
+            <button type="button" class="btn ghost" data-cmd="S,0" disabled>서보 0°</button>
+            <button type="button" class="btn ghost" data-cmd="S,90" disabled>서보 90°</button>
+            <button type="button" class="btn ghost" data-cmd="R" disabled>무지개</button>
+            <button type="button" class="btn ghost" data-cmd="T" disabled>한 칸 돌리기</button>
+            <button type="button" class="btn ghost" data-cmd="L,255,0,0" disabled>빨강</button>
+            <button type="button" class="btn ghost" data-cmd="L,0,0,0" disabled>끄기</button>
+          </div>
+        </div>
+        <div class="tester-box">
+          <strong>데이터 건강 상태</strong>
+          <p class="health"><span id="tLines">0</span>줄 받음 · 깨진 줄 <span id="tBroken">0</span>개 (<b id="tRatio">0%</b>)</p>
+          <p class="small" id="tHealthMsg">연결하면 1초에 약 5줄씩 들어옵니다.</p>
+        </div>
+      </div>
+      <div class="log" id="tLog" aria-label="통신 기록"></div>
+    </div>
+    <ul class="check success">
+      <li>마이크로비트를 흔들면 <b>흔들림</b> 숫자가 커진다.</li>
+      <li>손을 초음파센서 앞에 대면 <b>거리</b>가 바뀐다.</li>
+      <li><b>서보 90°</b>를 누르면 서보모터가 돈다. <b>무지개</b>를 누르면 네오픽셀이 켜진다.</li>
+      <li>깨진 줄 비율이 <b>1% 근처</b>다.</li>
+    </ul>
+  </section>
+
+  <!-- 2-5 -->
+  <section class="card" aria-labelledby="c25">
+    <div class="card-head"><span class="card-num">2-5</span><h2 id="c25">잘 안 될 때</h2></div>
+    <table class="tbl">
+      <thead><tr><th>이런 일이 생기면</th><th>이렇게 해 보세요</th></tr></thead>
+      <tbody>
+        <tr><td>숫자의 쉼표나 글자가 빠진다</td><td><b>메이크코드 탭을 닫으세요.</b> 그다음 Robotbit 배터리를 확인하세요.</td></tr>
+        <tr><td>포트 목록에 아무것도 없다</td><td>데이터용 USB 선인지, 젠더가 잘 꽂혔는지 확인하세요.</td></tr>
+        <tr><td>“포트가 이미 사용 중” 오류</td><td>메이크코드 탭, 다른 웹앱 탭을 모두 닫고 USB를 다시 꽂으세요.</td></tr>
+        <tr><td>연결은 됐는데 숫자가 안 들어온다</td><td>공통 코드를 다시 다운로드하세요. LED에 체크 표시가 나와야 합니다.</td></tr>
+        <tr><td>거리가 계속 -1이다</td><td>Trig(P14)와 Echo(P13)를 바꿔 꽂았는지, 앞에 물체가 있는지 확인하세요.</td></tr>
+        <tr><td>서보가 안 돈다</td><td>Robotbit 전원 스위치를 켜고, 서보가 S1에 꽂혔는지 확인하세요.</td></tr>
+        <tr><td>LED에 우는 얼굴과 숫자가 나온다</td><td>숫자를 적어서 선생님께 보여주세요. 공통 코드를 다시 넣으면 대부분 해결됩니다.</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <div class="next">
+    <button type="button" class="back" data-go="1">← 1단계로</button>
+    <button type="button" data-href="practice.html">3단계 활동지 실습 →</button>
+  </div>
+</div>
+</main>
+
+<footer>마이크로비트 웹앱 연결 실험실 · 수업용 자료</footer>
+
+<!-- FIRMWARE:START (tools/build.mjs가 공통-makecode.ts로 채웁니다) -->
+<script id="firmware" type="text/plain">
+// 기본 HTML 없이 쓰는 공통 메이크코드 (버전 3, 2026-10-16 실물 검증)
+// 사용 전 꼭: 다운로드한 뒤 MakeCode 탭을 닫거나 '연결 해제'하세요.
+//   MakeCode가 연결된 채로 있으면 시리얼 데이터를 같이 가져가서 웹앱에 글자가 빠진 채 도착합니다.
+// 확장: robotbit (KittenBot) 하나만 추가하세요. neopixel은 robotbit에 들어 있습니다.
+//   neopixel을 따로 추가하면 "호환되지 않습니다" 창이 뜹니다. (2026-10-16 메이크코드에서 확인)
+// 서보 S1 / 외장 네오픽셀 P15 (6개) / 초음파 Trig P14, Echo P13
+// 이 코드는 센서값을 보내고, 받은 명령대로만 움직입니다. 작동 조건은 웹앱이 판단합니다.
+//
+// 장치 → 웹 (0.2초마다)
+//   D,거리,흔들림,밝기,온도,A버튼,B버튼,앞뒤기울기,좌우기울기
+//   거리 cm(-1 = 측정 실패) / 흔들림 mg / 밝기 0~255 / 온도 ℃
+//   버튼 0·1 / 앞뒤기울기·좌우기울기 도(-180~180)
+// 웹 → 장치
+//   S,각도            서보 S1 (0~180)
+//   L,빨강,초록,파랑    네오픽셀 전체 한 색 (각 0~255, L,0,0,0 = 끄기)
+//   P,번호,빨강,초록,파랑  네오픽셀 한 개 (번호 0~5)
+//   B,밝기            네오픽셀 밝기 (0~255)
+//   R                 무지개색
+//   T                 색을 한 칸씩 옆으로 돌리기 (반복해서 보내면 움직이는 효과)
+let PIXEL_COUNT = 6
+let strip = neopixel.create(DigitalPin.P15, PIXEL_COUNT, NeoPixelMode.RGB)
+// 블록 변환 후에도 사라지지 않도록 배열을 값 6개로 바로 만듭니다.
+let pixelColors = [0, 0, 0, 0, 0, 0]
+strip.setBrightness(40)
+strip.clear()
+strip.show()
+serial.redirectToUSB()
+serial.setBaudRate(BaudRate.BaudRate115200)
+// 버퍼 크기는 기본값을 씁니다. (setTxBufferSize를 넣었을 때 깨짐이 늘었던 측정이 있어 넣지 않습니다.)
+pins.setPull(DigitalPin.P13, PinPullMode.PullNone)
+function clampNumber(value: number, low: number, high: number) {
+    if (!(value >= low)) return low
+    if (value > high) return high
+    return value
+}
+// 밝기는 색을 칠할 때 적용되므로, 저장해 둔 색으로 매번 다시 칠합니다.
+function renderPixels() {
+    for (let i = 0; i < PIXEL_COUNT; i++) {
+        strip.setPixelColor(i, pixelColors[i])
+    }
+    strip.show()
+}
+function toColor(red: string, green: string, blue: string) {
+    return neopixel.rgb(
+        clampNumber(parseInt(red), 0, 255),
+        clampNumber(parseInt(green), 0, 255),
+        clampNumber(parseInt(blue), 0, 255))
+}
+// 명령 받기 이벤트(serial.onDataReceived) 대신, 반복문에서 받은 글자를 직접 꺼내 와
+// 줄바꿈 단위로 명령을 실행합니다. 이 방식으로 실물 검증을 마쳤습니다.
+let receivedText = ""
+function readCommands() {
+    receivedText = receivedText + serial.readString()
+    let newline = receivedText.indexOf("\n")
+    while (newline >= 0) {
+        runCommand(receivedText.substr(0, newline))
+        receivedText = receivedText.substr(newline + 1, receivedText.length)
+        newline = receivedText.indexOf("\n")
+    }
+    // 줄바꿈 없이 너무 길어지면 잘못 들어온 글자로 보고 버립니다.
+    if (receivedText.length > 100) {
+        receivedText = ""
+    }
+}
+function runCommand(line: string) {
+    let fields = line.split(",")
+    let command = fields[0].charAt(0)
+    if (command == "S" && fields.length == 2) {
+        let target = parseInt(fields[1])
+        if (target >= 0 && target <= 180) {
+            robotbit.Servo(robotbit.Servos.S1, target)
+        }
+    } else if (command == "L" && fields.length == 4) {
+        let color = toColor(fields[1], fields[2], fields[3])
+        for (let i = 0; i < PIXEL_COUNT; i++) {
+            pixelColors[i] = color
+        }
+        renderPixels()
+    } else if (command == "P" && fields.length == 5) {
+        let index = parseInt(fields[1])
+        if (index >= 0 && index < PIXEL_COUNT) {
+            pixelColors[index] = toColor(fields[2], fields[3], fields[4])
+            renderPixels()
+        }
+    } else if (command == "B" && fields.length == 2) {
+        strip.setBrightness(clampNumber(parseInt(fields[1]), 0, 255))
+        renderPixels()
+    } else if (command == "R") {
+        for (let i = 0; i < PIXEL_COUNT; i++) {
+            pixelColors[i] = neopixel.hsl(i * 360 / PIXEL_COUNT, 100, 50)
+        }
+        renderPixels()
+    } else if (command == "T") {
+        let last = pixelColors.pop()
+        pixelColors.unshift(last)
+        renderPixels()
+    }
+}
+// 명령은 0.02초마다 확인하고, 센서 데이터는 0.2초마다 보냅니다.
+// 받는 곳의 기본 크기가 작아서, 명령을 자주 꺼내 와야 넘치지 않습니다.
+let lastSend = 0
+basic.forever(function () {
+    readCommands()
+    if (input.runningTime() - lastSend >= 200) {
+        lastSend = input.runningTime()
+        sendSensors()
+    }
+    basic.pause(20)
+})
+function sendSensors() {
+    pins.digitalWritePin(DigitalPin.P14, 0)
+    control.waitMicros(2)
+    pins.digitalWritePin(DigitalPin.P14, 1)
+    control.waitMicros(10)
+    pins.digitalWritePin(DigitalPin.P14, 0)
+    let pulse = pins.pulseIn(DigitalPin.P13, PulseValue.High, 25000)
+    let cm = Math.round(pulse / 58)
+    let distance = pulse > 0 && cm >= 2 && cm <= 400 ? cm : -1
+    let ax = input.acceleration(Dimension.X)
+    let ay = input.acceleration(Dimension.Y)
+    let az = input.acceleration(Dimension.Z)
+    let motion = Math.round(Math.abs(Math.sqrt(ax * ax + ay * ay + az * az) - 1024))
+    let brightness = input.lightLevel()
+    let temperature = input.temperature()
+    let buttonA = input.buttonIsPressed(Button.A) ? 1 : 0
+    let buttonB = input.buttonIsPressed(Button.B) ? 1 : 0
+    let pitch = input.rotation(Rotation.Pitch)
+    let roll = input.rotation(Rotation.Roll)
+    serial.writeLine("D," + distance + "," + motion + "," + brightness + "," + temperature + "," + buttonA + "," + buttonB + "," + pitch + "," + roll)
+}
+basic.showIcon(IconNames.Yes)
+</script>
+<!-- FIRMWARE:END -->
+<script>
+'use strict';
+const $ = id => document.getElementById(id);
+
+/* 1-2 상황별 화면 */
+const states = {
+  day: {img: 'images/lantern-day.webp', alt: '덮개가 닫히고 불이 꺼진 등불', cond: '밝기 80보다 밝음', desc: '덮개를 닫고 불을 끕니다.', cmds: ['L,0,0,0', 'S,0'], note: '처음부터 밝으면 아무 명령도 보내지 않습니다. 켜져 있다가 밝아질 때만 끄는 명령을 보냅니다.'},
+  night: {img: 'images/lantern-night.webp', alt: '덮개가 열리고 무지개색 네오픽셀이 켜진 등불', cond: '밝기 50보다 어두움', desc: '덮개를 열고 무지개색 불을 켭니다. "안전하게 걸어요"가 나타납니다.', cmds: ['S,90', 'B,80', 'R'], note: '서보모터 90도 → 밝기 80 → 무지개색 순서로 보냅니다.'},
+  walk: {img: 'images/lantern-walk.webp', alt: '흔들리며 빛나는 등불', cond: '어두운 상태에서 흔들림 500 이상', desc: '걸어가는 것으로 보고 무지개색을 빙글빙글 돌립니다.', cmds: ['T', 'T', 'T', '…'], note: '0.2초마다 T(한 칸 돌리기)를 계속 보냅니다. 흔들림이 멈추면 보내지 않습니다.'},
+  warning: {img: 'images/lantern-warning.webp', alt: '빨간 경고등이 켜진 등불', cond: 'A 버튼을 누르고 있음', desc: '다른 조건보다 먼저! 빨간 경고등을 켭니다.', cmds: ['S,90', 'L,255,0,0'], note: '버튼에서 손을 떼면 L,0,0,0으로 끄고, 다시 밝기 조건을 따릅니다.'}
+};
+const tabs = document.querySelectorAll('.tabs [role=tab]');
+function showState(key) {
+  const s = states[key];
+  tabs.forEach(t => t.setAttribute('aria-selected', String(t.dataset.state === key)));
+  $('stateImg').src = s.img; $('stateImg').alt = s.alt;
+  $('stateCond').textContent = '조건: ' + s.cond;
+  $('stateDesc').textContent = s.desc;
+  $('stateCmds').replaceChildren(...s.cmds.map(c => Object.assign(document.createElement('li'), {textContent: c})));
+  $('stateNote').textContent = s.note;
+}
+tabs.forEach(t => t.addEventListener('click', () => showState(t.dataset.state)));
+showState('day');
+
+/* 1-3 체험판: 실제 웹앱과 같은 판단 규칙 */
+const demo = {pixels: Array(6).fill([0, 0, 0]), servo: 0, rainbow: false, warning: false, rotateTimer: null};
+const rainbow = [[255, 0, 0], [255, 140, 0], [255, 230, 0], [0, 200, 70], [0, 90, 255], [150, 0, 220]];
+function log(text, cls) {
+  const line = document.createElement('div');
+  line.className = cls;
+  line.textContent = new Date().toTimeString().slice(0, 8) + '  ' + text;
+  const box = $('demoLog'); box.append(line);
+  while (box.children.length > 40) box.firstChild.remove();
+  box.scrollTop = box.scrollHeight;
+}
+function send(cmd) {
+  log('보냄 → ' + cmd, 'send');
+  const [c, ...v] = cmd.split(',');
+  if (c === 'S') demo.servo = Number(v[0]);
+  if (c === 'L') demo.pixels = Array(6).fill(v.map(Number));
+  if (c === 'R') demo.pixels = rainbow.slice();
+  if (c === 'T') demo.pixels = [demo.pixels[5], ...demo.pixels.slice(0, 5)];
+  draw();
+}
+function draw() {
+  const spans = $('demoPixels').children;
+  let lit = 0, sum = [0, 0, 0];
+  demo.pixels.forEach((p, i) => {
+    const on = p.some(x => x > 0);
+    spans[i].style.background = on ? `rgb(${p})` : '#2a2f3a';
+    spans[i].style.boxShadow = on ? `0 0 12px rgb(${p})` : 'none';
+    if (on) { lit++; sum = sum.map((x, k) => x + p[k]); }
+  });
+  const avg = lit ? sum.map(x => Math.round(x / lit)) : null;
+  $('demoLight').setAttribute('fill', avg ? `rgb(${avg})` : '#3a3f4b');
+  $('demoGlow').setAttribute('opacity', avg ? '1' : '0');
+  $('demoCover').style.transform = `rotate(${-demo.servo}deg)`;
+  $('demoServo').textContent = demo.servo + '°';
+  $('demoCoverText').textContent = demo.servo >= 45 ? '열림' : '닫힘';
+}
+function message(text, color) {
+  const m = $('demoMsg');
+  m.textContent = text || ''; m.style.color = color || '#ffd27a'; m.style.opacity = text ? '1' : '0';
+}
+function stopRotate() { if (demo.rotateTimer) { clearInterval(demo.rotateTimer); demo.rotateTimer = null; } }
+let coverOpen = false;
+function judge() {
+  const bright = Number($('inBright').value), shake = Number($('inShake').value);
+  const btnA = $('inBtnA').getAttribute('aria-pressed') === 'true';
+  if (btnA) {
+    if (!demo.warning) {
+      demo.warning = true; stopRotate();
+      if (!coverOpen) { send('S,90'); coverOpen = true; }
+      send('L,255,0,0'); message('경고!', '#ff7b70');
+    }
+    return;
+  }
+  if (demo.warning) { demo.warning = false; demo.rainbow = false; message(''); send('L,0,0,0'); coverOpen = false; }
+  if (bright < 50) {
+    if (!coverOpen || !demo.rainbow) {
+      send('S,90'); send('B,80'); send('R');
+      coverOpen = true; demo.rainbow = true; message('안전하게 걸어요');
+    }
+    if (shake > 500 && !demo.rotateTimer) demo.rotateTimer = setInterval(() => send('T'), 200);
+    if (shake <= 500) stopRotate();
+  } else if (bright > 80 && coverOpen) {
+    stopRotate(); send('L,0,0,0'); send('S,0');
+    coverOpen = false; demo.rainbow = false; message('');
+  }
+}
+$('inBright').addEventListener('input', e => { $('outBright').value = e.target.value; judge(); });
+$('inShake').addEventListener('input', e => { $('outShake').value = e.target.value; judge(); });
+function pressA(on) { $('inBtnA').setAttribute('aria-pressed', String(on)); judge(); }
+$('inBtnA').addEventListener('pointerdown', e => { e.preventDefault(); pressA(true); });
+['pointerup', 'pointerleave', 'pointercancel'].forEach(ev => $('inBtnA').addEventListener(ev, () => { if ($('inBtnA').getAttribute('aria-pressed') === 'true') pressA(false); }));
+$('inBtnA').addEventListener('keydown', e => { if ((e.key === ' ' || e.key === 'Enter') && !e.repeat) { e.preventDefault(); pressA(true); } });
+$('inBtnA').addEventListener('keyup', e => { if (e.key === ' ' || e.key === 'Enter') pressA(false); });
+log('체험판 준비 완료. 밝기를 50보다 낮춰 보세요.', 'info');
+draw();
+
+/* 1-4 데이터 흐름 */
+const flowText = [
+  ['① 센서가 주변을 잽니다', '마이크로비트 안의 빛 센서는 밝기를, 가속도 센서는 흔들림을, 버튼은 눌림을 잽니다. 초음파 센서는 앞에 있는 물체까지의 거리를 잽니다.'],
+  ['② 마이크로비트가 값을 모읍니다', '마이크로비트는 0.2초마다 센서값 8개를 읽어서 <code>D,12,30,24,25,0,0,3,-2</code>처럼 한 줄로 만듭니다. 마이크로비트는 판단하지 않고 보내기만 합니다.'],
+  ['③ USB 선이 글자를 실어 나릅니다', 'USB 선은 글자를 한 글자씩 차례로 보냅니다(시리얼 통신). 웹 브라우저(Edge, Chrome)는 웹 시리얼 기능으로 이 글자를 받습니다.'],
+  ['④ 웹앱이 판단합니다', '웹앱은 받은 숫자를 보고 조건을 따집니다. 예: “밝기가 50보다 작으면 켠다.” 이 조건이 바로 내 발명품의 아이디어입니다.'],
+  ['⑤ 웹앱이 명령을 보냅니다', '조건이 바뀌었을 때만 <code>S,90</code>, <code>R</code> 같은 짧은 명령을 보냅니다. 같은 명령을 계속 보내지 않습니다.'],
+  ['⑥ 장치가 실제로 움직입니다', '마이크로비트가 명령을 읽고 Robotbit의 S1 서보모터를 돌리거나 P15 네오픽셀 색을 바꿉니다. 그러면 센서값이 다시 ①로 돌아갑니다.']
+];
+const flowBtns = document.querySelectorAll('#flow button');
+function showFlow(i) {
+  flowBtns.forEach(b => b.setAttribute('aria-pressed', String(Number(b.dataset.i) === i)));
+  $('flowDetail').innerHTML = `<h3>${flowText[i][0]}</h3><p>${flowText[i][1]}</p>`;
+}
+flowBtns.forEach(b => b.addEventListener('click', () => showFlow(Number(b.dataset.i))));
+showFlow(0);
+
+/* 시작 화면: 등장 움직임과 밝기 체험 */
+(function () {
+  const root = document.documentElement;
+  root.classList.add('js');
+  const parts = document.querySelectorAll('#cover [data-rise], #cover .shutter');
+  if ('IntersectionObserver' in window) {
+    const io = new IntersectionObserver(entries => entries.forEach(e => {
+      if (e.isIntersecting) { const t = e.target; io.unobserve(t); requestAnimationFrame(() => requestAnimationFrame(() => t.classList.add('is-in'))); }
+    }), {threshold: 0.15});
+    parts.forEach(el => io.observe(el));
+  } else parts.forEach(el => el.classList.add('is-in'));
+
+  // 1단계 체험판과 같은 판단: 50보다 어두우면 켜고, 80보다 밝으면 끈다 (경계에서 깜빡이지 않게)
+  const range = document.getElementById('cvLight'), shot = document.getElementById('cvShot');
+  const SHOTS = {
+    off: ['images/lantern-day.webp', '덮개가 닫히고 불이 꺼진 등불 화면'],
+    on: ['images/lantern-night.webp', '덮개가 열리고 무지개색 네오픽셀이 켜진 등불 화면'],
+  };
+  let lit = false;
+  function update(fromUser) {
+    const b = Number(range.value);
+    document.getElementById('cvLightOut').textContent = b;
+    document.getElementById('cvLine').textContent = `D,32,6,${b},24,0,0,2,-1`;
+    let cmd = '보낼 명령 없음', judge;
+    if (!lit && b < 50) { lit = true; cmd = 'S,90 → B,80 → R'; }
+    else if (lit && b > 80) { lit = false; cmd = 'L,0,0,0 → S,0'; }
+    if (lit) judge = b > 80 ? '' : (b < 50 ? '어두워요. 덮개를 열고 무지개색 불을 켜요.' : '아직 켜 둬요. 80보다 밝아져야 꺼져요.');
+    else judge = b >= 50 ? (b <= 80 ? '아직 꺼 둬요. 50보다 어두워져야 켜져요.' : '밝아요. 등불은 꺼진 채로 있어요.') : '';
+    document.getElementById('cvJudge').textContent = judge;
+    const cmdEl = document.getElementById('cvCmd');
+    cmdEl.replaceChildren();
+    if (cmd.includes(',') || cmd === 'R') { const c = document.createElement('code'); c.textContent = cmd; cmdEl.append(c); }
+    else cmdEl.textContent = cmd;
+    const state = lit ? 'on' : 'off', want = SHOTS[state];
+    if ((shot.dataset.state || 'off') !== state) {
+      shot.dataset.state = state;
+      if (fromUser) { shot.classList.add('is-swap'); setTimeout(() => { shot.src = want[0]; shot.alt = want[1]; shot.classList.remove('is-swap'); }, 180); }
+      else { shot.src = want[0]; shot.alt = want[1]; }
+    }
+  }
+  range.addEventListener('input', () => update(true));
+  update(false);
+})();
+
+/* 단계 전환 */
+function goStage(n) {
+  document.querySelectorAll('[data-stage]').forEach(s => { s.hidden = s.dataset.stage !== String(n); });
+  document.querySelectorAll('.stepper [data-go]').forEach(b => {
+    if (b.dataset.go === String(n)) b.setAttribute('aria-current', 'step'); else b.removeAttribute('aria-current');
+  });
+  document.body.classList.toggle('on-cover', String(n) === '0');
+  history.replaceState(null, '', String(n) === '0' ? location.pathname : '#stage' + n);
+  window.scrollTo({top: 0});
+}
+document.querySelectorAll('[data-go]').forEach(b => b.addEventListener('click', () => goStage(b.dataset.go)));
+document.querySelectorAll('[data-href]').forEach(b => b.addEventListener('click', () => { setTimeout(() => { location.href = b.dataset.href; }, window.Sound && Sound.on ? 170 : 0); }));
+goStage((location.hash.match(/^#stage([12])$/) || [0, 0])[1]);
+
+/* 2-2 공통 코드 복사 */
+const firmware = $('firmware').textContent.trim();
+$('firmwareView').textContent = firmware || '공통 코드가 아직 들어 있지 않습니다.';
+$('copyFirmware').addEventListener('click', async () => {
+  try { await navigator.clipboard.writeText(firmware); $('copyMsg').textContent = '복사했습니다. 메이크코드에 붙여넣으세요.'; }
+  catch { $('copyMsg').textContent = '자동 복사가 막혔습니다. 아래 “공통 코드 보기”에서 직접 복사하세요.'; $('firmwareView').closest('details').open = true; }
+});
+
+/* 2-4 연결 시험기 (Web Serial) */
+const SENSORS = [['거리', 'cm'], ['흔들림', 'mg'], ['밝기', '0~255'], ['온도', '℃'], ['A 버튼', ''], ['B 버튼', ''], ['앞뒤 기울기', '°'], ['좌우 기울기', '°']];
+$('tTiles').replaceChildren(...SENSORS.map(([name, unit]) => {
+  const d = document.createElement('div'); d.className = 'tile';
+  d.innerHTML = `<span>${name}</span><strong>—</strong><small>${unit}</small>`; return d;
+}));
+const tiles = [...$('tTiles').children];
+const ser = {port: null, reader: null, writer: null, queue: Promise.resolve(), lines: 0, broken: 0, last: 0, closing: false};
+function tStatus(text, cls) { const s = $('tStatus'); s.textContent = text; s.className = 'status ' + (cls || ''); }
+function tLog(text, cls) {
+  const line = document.createElement('div'); line.className = cls || '';
+  line.textContent = new Date().toTimeString().slice(0, 8) + '  ' + text;
+  const box = $('tLog'); box.append(line);
+  while (box.children.length > 30) box.firstChild.remove();
+  box.scrollTop = box.scrollHeight;
+}
+function setConnected(on) {
+  $('tConnect').disabled = on; $('tDisconnect').disabled = !on;
+  document.querySelectorAll('.tbtns [data-cmd]').forEach(b => { b.disabled = !on; });
+}
+function onLine(raw) {
+  const line = raw.replace(/^[\s\x00-\x1f]+|[\s\x00-\x1f]+$/g, '');
+  if (!line) return;
+  ser.lines++;
+  const f = line.split(',');
+  const ok = f.length === 9 && f[0] === 'D' && f.slice(1).every(v => /^-?\d+$/.test(v));
+  if (!ok) { ser.broken++; tLog('깨진 줄: ' + line, 'info'); }
+  else {
+    const v = f.slice(1).map(Number);
+    if (!ser.last) tStatus('연결 완료 · 데이터 받는 중', 'ok');
+    ser.last = Date.now();
+    $('tTiles').classList.remove('stale');
+    v.forEach((x, i) => {
+      tiles[i].querySelector('strong').textContent = (i === 4 || i === 5) ? (x ? '눌림' : '—') : (i === 0 && x < 0 ? '측정 실패' : x);
+      tiles[i].classList.toggle('on', (i === 4 || i === 5) ? x === 1 : (i === 1 ? x > 300 : false));
+    });
+  }
+  $('tLines').textContent = ser.lines; $('tBroken').textContent = ser.broken;
+  const ratio = ser.broken / ser.lines * 100;
+  $('tRatio').textContent = ratio.toFixed(1) + '%';
+  $('tHealthMsg').textContent = ser.lines < 20 ? '조금 더 기다려 보세요.' : ratio <= 3 ? '좋아요! 데이터가 깨끗합니다.' : '깨진 줄이 많습니다. 메이크코드 탭을 닫았는지 확인하세요.';
+}
+async function readLoop() {
+  const decoder = new TextDecoder(); let buf = '';
+  try {
+    while (true) {
+      const {value, done} = await ser.reader.read();
+      if (done) break;
+      buf += decoder.decode(value, {stream: true});
+      let i;
+      while ((i = buf.indexOf('\n')) >= 0) { onLine(buf.slice(0, i)); buf = buf.slice(i + 1); }
+      if (buf.length > 2000) buf = '';
+    }
+  } catch (e) { if (!ser.closing) tLog('받기 오류: ' + e.message, 'info'); }
+  finally { try { ser.reader.releaseLock(); } catch {} ser.reader = null; if (!ser.closing) disconnect(); }
+}
+function sendCmd(cmd) {
+  ser.queue = ser.queue.then(async () => {
+    if (!ser.writer) return;
+    await ser.writer.write(new TextEncoder().encode(cmd + '\n'));
+    tLog('보냄 → ' + cmd, 'send');
+    await new Promise(r => setTimeout(r, 60));
+  }).catch(e => tLog('보내기 실패: ' + e.message, 'info'));
+  return ser.queue;
+}
+async function connect() {
+  if (!('serial' in navigator)) { tStatus('이 브라우저는 USB 연결을 지원하지 않습니다. Edge나 Chrome에서 여세요.', 'bad'); return; }
+  $('tConnect').disabled = true;
+  try {
+    ser.port = await navigator.serial.requestPort();
+    await ser.port.open({baudRate: 115200});
+  } catch (e) {
+    ser.port = null; $('tConnect').disabled = false;
+    if (e.name === 'NotFoundError') tStatus('포트를 고르지 않았습니다.', 'bad');
+    else if (e.name === 'InvalidStateError' || e.name === 'NetworkError') tStatus('포트가 이미 사용 중입니다. 메이크코드 탭과 다른 웹앱을 닫으세요.', 'bad');
+    else tStatus('연결 실패: ' + e.message, 'bad');
+    return;
+  }
+  Object.assign(ser, {lines: 0, broken: 0, last: 0, closing: false, queue: Promise.resolve()});
+  ser.writer = ser.port.writable.getWriter();
+  ser.reader = ser.port.readable.getReader();
+  setConnected(true); tStatus('포트 열림 · 데이터 기다리는 중', 'wait'); tLog('포트를 열었습니다.', 'info');
+  readLoop();
+}
+async function disconnect() {
+  if (!ser.port || ser.closing) return;
+  ser.closing = true;
+  try { await sendCmd('L,0,0,0'); } catch {}
+  try { if (ser.reader) await ser.reader.cancel(); } catch {}
+  try { ser.writer.releaseLock(); } catch {}
+  try { await ser.port.close(); } catch {}
+  ser.port = null; ser.writer = null; ser.closing = false; ser.last = 0;
+  setConnected(false); tStatus('연결 해제됨', ''); $('tTiles').classList.add('stale'); tLog('연결을 끊었습니다.', 'info');
+}
+$('tConnect').addEventListener('click', connect);
+$('tDisconnect').addEventListener('click', disconnect);
+document.querySelectorAll('.tbtns [data-cmd]').forEach(b => b.addEventListener('click', () => sendCmd(b.dataset.cmd)));
+setInterval(() => {
+  if (ser.port && ser.last && Date.now() - ser.last > 2000) { tStatus('데이터 끊김 · 코드와 USB를 확인하세요', 'bad'); $('tTiles').classList.add('stale'); }
+}, 1000);
+if ('serial' in navigator) navigator.serial.addEventListener('disconnect', e => { if (ser.port && e.target === ser.port) { ser.closing = false; disconnect(); tStatus('USB가 뽑혔습니다.', 'bad'); } });
+</script>
+<!-- LESSON:JS -->
+</body>
+</html>
