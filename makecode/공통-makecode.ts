@@ -1,4 +1,4 @@
-// 기본 HTML 없이 쓰는 공통 메이크코드 (버전 3, 2026-10-16 실물 검증)
+// 기본 HTML 없이 쓰는 공통 메이크코드 (버전 5, 2026-10-19: 반복문을 함수 뒤로 옮김, 초음파를 sonar 확장 방식으로 맞춤)
 // 사용 전 꼭: 다운로드한 뒤 MakeCode 탭을 닫거나 '연결 해제'하세요.
 //   MakeCode가 연결된 채로 있으면 시리얼 데이터를 같이 가져가서 웹앱에 글자가 빠진 채 도착합니다.
 // 확장: robotbit (KittenBot) 하나만 추가하세요. neopixel은 robotbit에 들어 있습니다.
@@ -27,7 +27,6 @@ strip.show()
 serial.redirectToUSB()
 serial.setBaudRate(BaudRate.BaudRate115200)
 // 버퍼 크기는 기본값을 씁니다. (setTxBufferSize를 넣었을 때 깨짐이 늘었던 측정이 있어 넣지 않습니다.)
-pins.setPull(DigitalPin.P13, PinPullMode.PullNone)
 function clampNumber(value: number, low: number, high: number) {
     if (!(value >= low)) return low
     if (value > high) return high
@@ -96,24 +95,15 @@ function runCommand(line: string) {
         renderPixels()
     }
 }
-// 명령은 0.02초마다 확인하고, 센서 데이터는 0.2초마다 보냅니다.
-// 받는 곳의 기본 크기가 작아서, 명령을 자주 꺼내 와야 넘치지 않습니다.
-let lastSend = 0
-basic.forever(function () {
-    readCommands()
-    if (input.runningTime() - lastSend >= 200) {
-        lastSend = input.runningTime()
-        sendSensors()
-    }
-    basic.pause(20)
-})
 function sendSensors() {
+    // 초음파: sonar 확장(sonar.ping)과 같은 순서로 잽니다. (2026-10-19 실물에서 sonar 방식만 거리가 나와 맞춤)
+    pins.setPull(DigitalPin.P14, PinPullMode.PullNone)
     pins.digitalWritePin(DigitalPin.P14, 0)
     control.waitMicros(2)
     pins.digitalWritePin(DigitalPin.P14, 1)
     control.waitMicros(10)
     pins.digitalWritePin(DigitalPin.P14, 0)
-    let pulse = pins.pulseIn(DigitalPin.P13, PulseValue.High, 25000)
+    let pulse = pins.pulseIn(DigitalPin.P13, PulseValue.High, 500 * 58)
     let cm = Math.round(pulse / 58)
     let distance = pulse > 0 && cm >= 2 && cm <= 400 ? cm : -1
     let ax = input.acceleration(Dimension.X)
@@ -128,4 +118,15 @@ function sendSensors() {
     let roll = input.rotation(Rotation.Roll)
     serial.writeLine("D," + distance + "," + motion + "," + brightness + "," + temperature + "," + buttonA + "," + buttonB + "," + pitch + "," + roll)
 }
+// 명령은 0.02초마다 확인하고, 센서 데이터는 0.2초마다 보냅니다.
+// 받는 곳의 기본 크기가 작아서, 명령을 자주 꺼내 와야 넘치지 않습니다.
+let lastSend = 0
+basic.forever(function () {
+    readCommands()
+    if (input.runningTime() - lastSend >= 200) {
+        lastSend = input.runningTime()
+        sendSensors()
+    }
+    basic.pause(20)
+})
 basic.showIcon(IconNames.Yes)
