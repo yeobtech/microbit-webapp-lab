@@ -43,14 +43,17 @@ function silk(text,pos,width=1) {
   const m=new THREE.Mesh(new THREE.PlaneGeometry(width,width*64/canvas.width),new THREE.MeshBasicMaterial({map,transparent:true,depthWrite:false}));
   m.rotation.x=-Math.PI/2;m.position.set(...pos);world.add(m);return m;
 }
-function label(text,pos,width=2,color='#223830') {
-  const canvas=document.createElement('canvas'); canvas.width=Math.max(128,text.length*32); canvas.height=64;
-  const ctx=canvas.getContext('2d'); ctx.fillStyle='rgba(250,249,241,.95)';ctx.fillRect(0,0,canvas.width,64);
-  ctx.fillStyle=color;ctx.textAlign='center';ctx.textBaseline='middle';ctx.font='bold 40px system-ui, sans-serif';ctx.fillText(text,canvas.width/2,32,canvas.width-8);
+function label(text,pos,width=2,color='#294658') {
+  const device=pos[0]<0?'board':pos[2]<-2?'ultra':pos[2]>2?'neo':'servo';
+  const palette={board:['#e2f2e9','#b7d7c6'],ultra:['#e3effb','#b9d1e8'],servo:['#fff0dc','#e7cfad'],neo:['#eee9f8','#d1c5e7']}[device];
+  const canvas=document.createElement('canvas'); canvas.width=Math.max(180,text.length*36+60); canvas.height=96;
+  const ctx=canvas.getContext('2d');
+  ctx.beginPath();ctx.roundRect(3,3,canvas.width-6,90,32);ctx.fillStyle=palette[0];ctx.fill();ctx.strokeStyle=palette[1];ctx.lineWidth=3;ctx.stroke();
+  ctx.fillStyle=color;ctx.textAlign='center';ctx.textBaseline='middle';ctx.font='44px "Jua", sans-serif';ctx.fillText(text,canvas.width/2,49,canvas.width-36);
   const texture=new THREE.CanvasTexture(canvas); texture.colorSpace=THREE.SRGBColorSpace;
   const sprite=new THREE.Sprite(new THREE.SpriteMaterial({map:texture,depthTest:false}));
-  sprite.position.set(...pos);sprite.scale.set(width,width*64/canvas.width,1);
-  sprite.userData.device=pos[0]<0?'board':pos[2]<-2?'ultra':pos[2]>2?'neo':'servo';
+  sprite.position.set(...pos);sprite.scale.set(width,width*96/canvas.width,1);
+  sprite.userData.device=device;
   annotations.push(sprite);world.add(sprite);return sprite;
 }
 function tube(a,b,color,lift=.9,radius=.045) {
@@ -134,7 +137,7 @@ function createModels() {
   box(1.5,1.25,1.2,0x3375c4,world,[4.5,.7,0]);
   cylinder(.35,.4,0x3566a5,world,[4.5,1.5,0]);
   box(1.6,.13,.22,0xe8ece5,world,[4.5,1.76,0]);
-  label('SG90 · 서보모터',[4.3,2.25,0],3);
+  label('SG90 · 서보모터',[4.5,.18,1.55],3);
   for(const [id,z] of [['g',-.65],['v',0],['s',.65]]) {
     pin('servo.'+id,[2.3,.4,z]);world.add(tube(new THREE.Vector3(2.3,.2,z),new THREE.Vector3(3.75,.35,z*.6),id==='g'?0x805734:id==='v'?0xdf3d36:0xe88a31,.2,.035));
   }
@@ -240,14 +243,17 @@ function init() {
 }
 makeButtons();sync();
 $('w3Power').addEventListener('click',()=>api.togglePower());
-toggle.addEventListener('click',()=>{
+toggle.addEventListener('click',async()=>{
   if(failed)return;
   try {
+    toggle.disabled=true;
+    await document.fonts.load('44px "Jua"');
     if(!renderer)init();active=!active;panel.hidden=!active;photo.hidden=active;$('zoom').disabled=active;
     toggle.textContent=active?'사진으로 보기':'3D 작업대 열기';toggle.setAttribute('aria-pressed',String(active));controlsUI.forEach(el=>el.disabled=!active);
     $('w3Help').textContent=active?'핀 두 개를 차례로 눌러 연결해 보세요. 작은 핀은 부품을 확대하거나 아래 이름표로 선택할 수 있어요.':'사진 작업대로 돌아왔어요. 3D에서 연결한 선도 그대로입니다.';
     if(active){resize();sync();}else{cancelAnimationFrame(frame);frame=0;window.dispatchEvent(new Event('resize'));}
   }catch(error){console.warn('3D wiring unavailable',error);fail();}
+  finally { if(!failed)toggle.disabled=false; }
 });
 $('w3Reset').addEventListener('click',()=>{$('w3Focus').value='all';frameScene();});
 $('w3Top').addEventListener('click',()=>frameScene($('w3Focus').value,true));

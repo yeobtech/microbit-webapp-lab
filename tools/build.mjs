@@ -29,7 +29,7 @@ const wiringJS = ('/* Three.js license\n' + threeLicense + '\n*/\n' + wiringBund
 function embedLantern(page) {
   return page.replace('<!-- LANTERN:CSS -->', () => '<style>' + fs.readFileSync(path.join(root,'tools','lantern.css'),'utf8') + '</style>')
     .replace('<!-- LANTERN:JS -->', () => '<script>' + lanternJS + '</script>')
-    .replace('<!-- WIRING3D:CSS -->', () => '<style>' + fs.readFileSync(path.join(root,'tools','wiring3d.css'),'utf8') + '</style>')
+    .replace('<!-- WIRING3D:CSS -->', () => '<!-- Jua: SIL Open Font License 1.1\n' + fs.readFileSync(path.join(root,'fonts','jua','OFL.txt'),'utf8').replace(/[ \t]+$/gm,'') + '\n--><style>' + fs.readFileSync(path.join(root,'tools','wiring3d.css'),'utf8').replace('JUA_FONT_DATA','data:font/ttf;base64,'+fs.readFileSync(path.join(root,'fonts','jua','Jua-Regular.ttf')).toString('base64')) + '</style>')
     .replace('<!-- WIRING3D:JS -->', () => '<script>' + wiringJS + '</script>');
 }
 
