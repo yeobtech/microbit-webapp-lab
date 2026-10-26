@@ -11,6 +11,8 @@ const positions = new Map(), pinMeshes = [], pinViews = new Map(), buttons = new
 const pinLabels = [];
 const annotations = [];
 const powerLeds = [], powerTargets = [];
+const usbTargets = [];
+let usbCable;
 let switchKnob, batteryOff, batteryOn;
 const deviceCenters = {board:new THREE.Vector3(-3.3,.3,0),ultra:new THREE.Vector3(4,.3,-3.2),servo:new THREE.Vector3(4,.5,0),neo:new THREE.Vector3(4,.3,3.2)};
 let renderer, world, camera, orbit, wireGroup, active=false, visible=false, frame=0, failed=false;
@@ -77,7 +79,7 @@ function pin(id,position) {
 function createModels() {
   box(17,.15,11,0xdad5c6,world,[0,-.2,0]);
   plate(7.5,5.4,[-3.3,0,0],0x222c28);
-  label('Robotbit 확장보드',[-3.3,.4,-3.35],4);
+  label('Robotbit 확장보드',[-3.3,.4,-4.0],4);
   const columns=[...['P0','P1','P2','P8','P12','P13','P14','P15'].map((name,i)=>[name,-6.3+i*.38]),...Array.from({length:8},(_,i)=>['S'+(i+1),-2.5+i*.38])];
   for(const [name,x] of columns) {
     pinLabels.push(silk(name,[x,.14,-.17],.31));
@@ -96,6 +98,8 @@ function createModels() {
   box(.85,.35,.5,0x39854b,world,[-5.8,.3,-2.35]);
   for(const x of [-6,-5.6]) {cylinder(.13,.08,0xb8bfbb,world,[x,.52,-2.35]);box(.18,.015,.025,0x424946,world,[x,.57,-2.35]);}
   box(.6,.25,.42,0xbfc8ca,world,[-2.7,.27,-2.45]);box(.43,.13,.02,0x151b1b,world,[-2.7,.29,-2.67]);
+  const chargeHit=box(.65,.4,.5,0xffffff,world,[-2.7,.3,-2.45]);chargeHit.material.visible=false;chargeHit.userData.usb='board';usbTargets.push(chargeHit);
+  label('충전용 USB',[-2.7,.4,-3.0],1.8);
   box(.65,.2,.4,0x101615,world,[-1.65,.25,-2.4]);
   switchKnob=box(.22,.16,.32,0xeeeecc,world,[-1.83,.43,-2.4]);
   const switchHit=box(.9,.45,.65,0x222222,world,[-1.65,.4,-2.4]);switchHit.material.visible=false;switchHit.userData.power=true;powerTargets.push(switchHit);
@@ -115,6 +119,15 @@ function createModels() {
   batteryOn=label('18650 · ON',[-3.3,1.25,.8],2.5,'#147844');
   box(4.8,.3,.42,0x101715,world,[-3.3,.25,2.1]);
   box(4.4,1.6,.16,0x1f2727,world,[-3.3,1.05,2.1]);
+  box(.58,.22,.36,0xc8d0d3,world,[-3.3,1.91,2.1]);
+  box(.4,.025,.24,0x182629,world,[-3.3,2.03,2.1]);
+  const microHit=box(.75,.4,.55,0xffffff,world,[-3.3,2,2.1]);microHit.material.visible=false;microHit.userData.usb='microbit';usbTargets.push(microHit);
+  label('PC 연결 · 위쪽 USB',[-3.3,.3,3.3],3);
+  usbCable=new THREE.Group();world.add(usbCable);
+  box(.43,.46,.28,0x40546c,usbCable,[-3.3,2.25,2.1]);
+  usbCable.add(tube(new THREE.Vector3(-3.3,2.48,2.1),new THREE.Vector3(-7.5,.25,3.6),0x40546c,1.5,.075));
+  box(.65,.25,.45,0xaab7c5,usbCable,[-7.5,.25,3.6]);
+  label('PC',[-7.5,.35,4.2],.8);
   for(let row=0;row<5;row++) for(let col=0;col<5;col++) {const led=box(.1,.1,.05,0x482424,world,[-3.7+col*.2,1.5-row*.2,2.21]);if((row===1&&(col===1||col===3))||(row===3&&col>0&&col<4))powerLeds.push(led);}
   box(.35,.35,.1,0xaaaaaa,world,[-4.8,1.1,2.25]);box(.35,.35,.1,0xaaaaaa,world,[-1.8,1.1,2.25]);
   label('micro:bit',[-3.3,.25,2.7],2);
@@ -166,17 +179,18 @@ function sync() {
   $('w3PowerState').dataset.on=String(state.powered);
   $('w3PowerState').textContent=state.powered
     ? (state.verified?'전원 ON · 배선과 점검 완료. 가상 보드 표시등이 켜졌어요.':`전원 ON · ${state.conns.length}/10개 연결, 최종 점검 전입니다. 전원을 끄고 배선을 마무리하세요.`)
-    :state.verified?'전원 OFF · 최종 확인 완료. 배선을 다시 바꾸려면 처음부터를 누르세요.':'전원 OFF · 선을 연결할 수 있어요. 보드의 스위치도 눌러 보세요.';
+    :state.usbConnected?'배터리 OFF · USB 연결 중입니다. 배선을 바꾸려면 USB도 빼 주세요.':state.verified?'전원 OFF · 최종 확인 완료. 배선을 다시 바꾸려면 처음부터를 누르세요.':'전원 OFF · 선을 연결할 수 있어요. 보드의 스위치도 눌러 보세요.';
   const hints=state.hint===null?[]:[data.wires[state.hint].from,data.wires[state.hint].to];
   const wired=new Set(state.conns.flatMap(i=>[data.wires[i].from,data.wires[i].to]));
   for(const [id,{button,text,p,index}] of buttons) {
     text.textContent=(wired.has(id)?'✓ ':'')+(state.mode==='solo'?'핀 '+(index+1):p.label);
-    button.disabled=state.verified||state.powered;button.setAttribute('aria-pressed',String(state.selected===id));button.dataset.hint=String(hints.includes(id));button.dataset.wired=String(wired.has(id));
+    button.disabled=state.verified||state.powered||state.usbConnected;button.setAttribute('aria-pressed',String(state.selected===id));button.dataset.hint=String(hints.includes(id));button.dataset.wired=String(wired.has(id));
   }
   if(!world) return;
+  usbCable.visible=state.usbConnected;
   switchKnob.position.x=state.powered?-1.47:-1.83;
   batteryOn.visible=state.powered;batteryOff.visible=!state.powered;
-  powerLeds.forEach((led,i)=>{led.material.color.set(state.powered?(i===0?0x39e58c:0xf33c2a):(i===0?0x28443a:0x482424));led.material.emissive.set(state.powered?(i===0?0x16aa55:0xe52a15):0x000000);led.material.emissiveIntensity=state.powered?1.3:0;});
+  powerLeds.forEach((led,i)=>{const on=state.powered||(i>0&&state.usbConnected);led.material.color.set(on?(i===0?0x39e58c:0xf33c2a):(i===0?0x28443a:0x482424));led.material.emissive.set(on?(i===0?0x16aa55:0xe52a15):0x000000);led.material.emissiveIntensity=on?1.3:0;});
   pinLabels.forEach(label=>{label.visible=state.mode!=='solo';});
   for(const [id,{halo}] of pinViews) {
     halo.visible=!state.powered&&(state.selected===id||hints.includes(id)||wired.has(id));
@@ -234,8 +248,9 @@ function init() {
     pointers.delete(e.pointerId);
     if(!down||dragged){if(!pointers.size)down=null;return;}
     down=null;const rect=canvas.getBoundingClientRect();pointer.set((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1);
-    raycaster.setFromCamera(pointer,camera);const hit=raycaster.intersectObjects([...pinMeshes,...powerTargets],false)[0];
-    if(hit?.object.userData.power)api.togglePower();
+    raycaster.setFromCamera(pointer,camera);const hit=raycaster.intersectObjects([...pinMeshes,...powerTargets,...usbTargets],false)[0];
+    if(hit?.object.userData.usb)api.chooseUSB(hit.object.userData.usb);
+    else if(hit?.object.userData.power)api.togglePower();
     else if(hit&&!state.verified&&!state.powered)api.activate(hit.object.userData.pin);
   });
   canvas.addEventListener('pointercancel',e=>{pointers.delete(e.pointerId);down=null;dragged=true;});

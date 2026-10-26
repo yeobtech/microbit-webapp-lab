@@ -235,6 +235,12 @@
     <div class="sec-head"><h2>마이크로비트 확장보드 (Robotbit) 살펴보기</h2></div>
     <p>왼쪽 P 계열 핀과 오른쪽 S1~S8 영역은 역할과 전원 구성이 달라요. 따로 확인해야 해요.</p>
     <div class="ph narrow" data-photo="images/pl-board.webp" data-alt="마이크로비트 확장보드(Robotbit)"></div>
+    <div class="usb-guide">
+      <h3>5핀 USB는 마이크로비트 위쪽에 꽂아요</h3>
+      <p><b>PC ↔ 데이터용 5핀(Micro USB) 케이블 ↔ 마이크로비트 위쪽 USB 단자</b>로 연결합니다. 확장보드 위의 USB 단자는 배터리 충전용이므로, 그곳에 꽂으면 코드 전송이나 웹앱 통신이 되지 않아요.</p>
+      <div class="ph narrow" data-photo="images/pl-microbit-insert.webp" data-alt="확장보드에 꽂힌 마이크로비트. PC 케이블은 세워진 마이크로비트 위쪽 USB 단자에 연결합니다."></div>
+      <p>충전 전용 케이블이 아니라 <b>데이터 전송을 지원하는 케이블</b>을 사용하세요. 점퍼선 배선을 끝내고 점검한 다음 USB를 연결합니다.</p>
+    </div>
     <h3 style="margin-top:18px">이름표를 보며 위치 확인하기</h3>
     <div class="ph" data-photo="images/pl-microbit-board-anatomy.webp" data-alt="Robotbit의 주요 부분을 표시한 그림"></div>
     <table class="tbl" style="margin-top:14px">
@@ -334,6 +340,16 @@
           <label><input type="checkbox" data-check="signal"> 신호 핀 번호가 공통 코드와 같아요. (P14·P13·S1·P15)</label>
           <p class="dnote" id="preNote">선을 모두 연결하면 점검할 수 있어요.</p>
         </fieldset>
+        <div class="usb-guide">
+          <h3>PC의 5핀 USB 케이블은 어디에 꽂을까요?</h3>
+          <p>점퍼선 10개와 위의 세 가지 점검을 마친 뒤, 마이크로비트 위쪽 단자에 연결하세요. 3D에서는 단자를 직접 눌러도 됩니다.</p>
+          <div class="w3-toolbar">
+            <button type="button" class="btn ghost" id="usbMicrobit">마이크로비트 위쪽 USB</button>
+            <button type="button" class="btn ghost" id="usbBoard">확장보드 USB</button>
+            <button type="button" class="btn ghost" id="usbDisconnect" disabled>USB 빼기</button>
+          </div>
+          <p id="usbStatus" role="status">USB 미연결 · PC 통신은 마이크로비트의 USB 단자를 사용합니다.</p>
+        </div>
         <div class="actions">
           <button type="button" class="btn" id="verifyBtn" disabled>전원 켜기 전 최종 확인</button>
           <button type="button" class="btn ghost" id="undoBtn" disabled>한 단계 되돌리기</button>
@@ -427,7 +443,7 @@ const pinById = id => pins.find(p => p.id === id);
 const full = id => `${pinById(id).device} / ${pinById(id).label}`;
 const pair = (a, b) => [a, b].sort().join('|');
 
-const st = {mode: 'guide', conns: [], selected: null, hint: 0, verified: false, powered: false, passed: new Set(), checks: new Set()};
+const st = {mode: 'guide', conns: [], selected: null, hint: 0, verified: false, powered: false, usbConnected: false, passed: new Set(), checks: new Set()};
 const els = {};   // 핀 id → [사진 위 점, 이름표]
 
 /* 작업대 그리기 */
@@ -484,7 +500,7 @@ function render() {
       el.classList.toggle('wired', wired.has(id));
       el.classList.toggle('hint', hintIds.includes(id));
       el.setAttribute('aria-pressed', String(st.selected === id));
-      el.disabled = st.verified || st.powered;
+      el.disabled = st.verified || st.powered || st.usbConnected;
     }
     dot.querySelector('.lbl').textContent = labels ? p.label : '';
     tag.querySelector('span').textContent = labels ? p.label : `핀 ${idx + 1}`;
@@ -497,18 +513,20 @@ function render() {
     li.innerHTML = '<i></i><span></span><button type="button">선 빼기</button>';
     li.querySelector('i').style.background = w.color;
     li.querySelector('span').textContent = `${full(w.from)} ↔ ${full(w.to)}`;
-    li.querySelector('button').disabled = st.verified || st.powered;
+    li.querySelector('button').disabled = st.verified || st.powered || st.usbConnected;
     li.querySelector('button').addEventListener('click', () => remove(i));
     return li;
   }));
   $('noConns').hidden = st.conns.length > 0;
   const complete = st.conns.length === scene.wires.length;
-  $('preflight').disabled = !complete || st.verified || st.powered;
+  $('preflight').disabled = !complete || st.verified || st.powered || st.usbConnected;
   $('preNote').hidden = complete;
   $('preflight').querySelectorAll('input').forEach(c => { c.checked = st.checks.has(c.dataset.check); });
-  $('verifyBtn').disabled = !complete || st.checks.size < 3 || st.verified || st.powered;
+  $('verifyBtn').disabled = !complete || st.checks.size < 3 || !st.usbConnected || st.verified || st.powered;
   $('verifyBtn').textContent = st.verified ? '최종 확인 완료' : '전원 켜기 전 최종 확인';
-  $('undoBtn').disabled = !st.conns.length || st.verified || st.powered;
+  $('undoBtn').disabled = !st.conns.length || st.verified || st.powered || st.usbConnected;
+  $('usbDisconnect').disabled = !st.usbConnected;
+  $('usbMicrobit').setAttribute('aria-pressed', String(st.usbConnected));
   $('hintBtn').disabled = st.verified || st.mode !== 'guide';
   document.querySelectorAll('.modes button').forEach(b => {
     b.setAttribute('aria-pressed', String(b.dataset.mode === st.mode));
@@ -576,19 +594,21 @@ function connect(a, b) {
   render();
 }
 function activate(id) {
+  if (st.usbConnected) { say('배선을 바꾸려면 USB를 먼저 빼 주세요.'); return; }
   if (st.powered) { say('배선을 바꾸려면 먼저 배터리 전원을 꺼 주세요.'); return; }
   if (st.verified) { say('연결을 바꾸려면 먼저 처음부터를 누르세요.'); return; }
   if (st.selected) return connect(st.selected, id);
   st.selected = id; say(`${full(id)} 선택. 연결할 반대쪽 핀을 눌러요.`); render();
 }
 function remove(i) {
-  if (st.powered || st.verified) return;
+  if (st.powered || st.verified || st.usbConnected) return;
   st.conns = st.conns.filter(k => k !== i); st.checks.clear(); st.selected = null;
   st.hint = st.mode === 'guide' ? nextUnwired(st.conns) : null;
   say('선 한 개를 뺐어요. 핀 이름과 역할을 다시 확인해요.'); render();
 }
 function reset(text) {
-  Object.assign(st, {conns: [], selected: null, verified: false, powered: false, hint: st.mode === 'guide' ? 0 : null});
+  Object.assign(st, {conns: [], selected: null, verified: false, powered: false, usbConnected: false, hint: st.mode === 'guide' ? 0 : null});
+  $('usbStatus').textContent = 'USB 미연결 · PC 통신은 마이크로비트의 USB 단자를 사용합니다.';
   st.checks.clear();
   say(text || (st.mode === 'guide' ? '빛나는 두 핀을 연결해 보세요. 검정 GND부터 시작해요.' : '선을 모두 정리했어요. 다시 연결해 보세요.'));
   render();
@@ -607,6 +627,16 @@ $('cancelBtn').addEventListener('click', () => { st.selected = null; say('선택
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && st.selected) { st.selected = null; say('선택을 취소했어요.'); render(); } });
 $('undoBtn').addEventListener('click', () => remove(st.conns[st.conns.length - 1]));
 $('resetBtn').addEventListener('click', () => reset());
+function chooseUSB(port) {
+  if (port === 'board') { $('usbStatus').textContent = '확장보드 USB는 배터리 충전용입니다. PC 통신 케이블은 마이크로비트 위쪽 USB에 꽂아 주세요.'; return; }
+  if (st.usbConnected) return;
+  if (st.conns.length !== scene.wires.length || st.checks.size !== 3 || st.powered) { $('usbStatus').textContent = '배터리 전원을 끈 상태에서 점퍼선 10개와 세 가지 점검을 먼저 완료하세요. 그다음 마이크로비트 위쪽 USB를 연결합니다.'; return; }
+  st.usbConnected = true; st.selected = null;
+  $('usbStatus').textContent = 'USB 연결 완료: PC ↔ 마이크로비트 위쪽 USB. 코드 전송과 웹앱 통신 경로가 맞아요. (가상 연결)'; render();
+}
+$('usbMicrobit').addEventListener('click', () => chooseUSB('microbit'));
+$('usbBoard').addEventListener('click', () => chooseUSB('board'));
+$('usbDisconnect').addEventListener('click', () => { st.usbConnected = false; st.verified = false; $('usbStatus').textContent = 'USB를 뺐어요. 배터리 전원도 꺼져 있어야 배선을 바꿀 수 있습니다.'; render(); });
 $('preflight').querySelectorAll('input').forEach(c => c.addEventListener('change', () => {
   c.checked ? st.checks.add(c.dataset.check) : st.checks.delete(c.dataset.check);
   say('전원을 켜기 전 확인 항목을 하나씩 읽고 체크해요.'); render();
@@ -821,7 +851,8 @@ goStep(Number((location.hash.match(/^#step([1-5])$/) || [0, 1])[1]));
 <script>
 window.wiringLab = {
   getScene: () => scene,
-  getState: () => ({mode: st.mode, conns: [...st.conns], selected: st.selected, hint: st.hint, verified: st.verified, powered: st.powered}),
+  getState: () => ({mode: st.mode, conns: [...st.conns], selected: st.selected, hint: st.hint, verified: st.verified, powered: st.powered, usbConnected: st.usbConnected}),
+  chooseUSB,
   togglePower: () => { st.powered = !st.powered; st.selected = null; say(st.powered ? '가상 배터리 전원을 켰어요. 배선을 바꾸려면 먼저 전원을 꺼 주세요.' : '가상 배터리 전원을 껐어요.'); render(); },
   activate: id => { if (pinById(id)) activate(id); }
 };

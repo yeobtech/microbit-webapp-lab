@@ -23,6 +23,12 @@ test('3D shares wrong-pair feedback, all ten wires, removal and verification wit
   await expect(page.locator('#conns li')).toHaveCount(10);
   await expect(page.locator('#verifyBtn')).toBeDisabled();
   for(const c of await page.locator('#preflight input').all())await c.check();
+  await expect(page.locator('#verifyBtn')).toBeDisabled();
+  await page.locator('#usbBoard').click();
+  await expect(page.locator('#usbStatus')).toContainText('충전용');
+  expect(await page.evaluate(()=>wiringLab.getState().usbConnected)).toBe(false);
+  await page.locator('#usbMicrobit').click();
+  await expect(page.locator('#usbStatus')).toContainText('USB 연결 완료');
   await page.locator('#verifyBtn').click();
   await expect(pin(page,'neo.s')).toBeDisabled();
   await page.locator('#w3Top').click();
@@ -84,6 +90,7 @@ test('battery switch locks editing, survives view changes, and resets safely',as
   const wires=await page.evaluate(()=>wiringLab.getScene().wires);
   for(const w of wires.slice(1)){await pin(page,w.from).click();await pin(page,w.to).click();}
   for(const c of await page.locator('#preflight input').all())await c.check();
+  await page.locator('#usbMicrobit').click();
   await page.locator('#verifyBtn').click();
   await page.locator('#w3Power').click();
   await expect(page.locator('#w3PowerState')).toContainText('배선과 점검 완료');
@@ -104,4 +111,29 @@ test('3D board switch itself toggles battery power',async({page})=>{
     await page.mouse.click(rect.x+rect.width/2-1.65*scale,rect.y+rect.height/2-2.4*scale);
     await expect(page.locator('#w3Power')).toHaveAttribute('aria-pressed',expected);
   }
+});
+test('USB ports reject charging port and connect only after wiring checks; unplug unlocks',async({page})=>{
+  await open(page);await page.locator('#w3Top').click();
+  const canvas=page.locator('#w3Viewport canvas');
+  async function clickPort(x,y,z) {
+    await canvas.evaluate(el=>window.scrollTo(0,scrollY+el.getBoundingClientRect().top-150));
+    const rect=await canvas.boundingBox(),scale=rect.height/(2*(16-y)*Math.tan(Math.PI/8));
+    await page.mouse.click(rect.x+rect.width/2+x*scale,rect.y+rect.height/2+z*scale);
+  }
+  await clickPort(-2.7,.3,-2.45);
+  await expect(page.locator('#usbStatus')).toContainText('충전용');
+  await clickPort(-3.3,2,2.1);
+  await expect(page.locator('#usbStatus')).toContainText('점퍼선 10개');
+  for(const w of await page.evaluate(()=>wiringLab.getScene().wires)){await pin(page,w.from).click();await pin(page,w.to).click();}
+  for(const c of await page.locator('#preflight input').all())await c.check();
+  await clickPort(-3.3,2,2.1);
+  await expect(page.locator('#usbStatus')).toContainText('USB 연결 완료');
+  await expect(pin(page,'neo.g')).toBeDisabled();
+  await expect(page.locator('#verifyBtn')).toBeEnabled();
+  await canvas.screenshot({path:'test-results/usb-correct-port.png'});
+  await page.locator('#w3Toggle').click();
+  expect(await page.evaluate(()=>wiringLab.getState().usbConnected)).toBe(true);
+  await page.locator('#usbDisconnect').click();
+  await expect(page.locator('#verifyBtn')).toBeDisabled();
+  await expect(page.locator('#stage [data-pin="neo.g"]').last()).toBeEnabled();
 });

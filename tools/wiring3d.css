@@ -27,3 +27,4 @@
 .w3-pinlist button[data-wired="true"] { border-color:#18734f; }
 .w3-pinlist button:disabled { opacity:.6; }
 @media(max-width:640px) { #w3Viewport { height:410px; } #w3Pins { grid-template-columns:1fr; } .w3-toolbar .btn { padding:9px 12px; font-size:14px; } }
+.usb-guide { margin:18px 0; padding:18px; background:#edf5fc; border:1px solid #bed4e7; border-radius:20px; } .usb-guide h3 { margin:0 0 10px; font-family:Jua,system-ui,sans-serif; font-weight:400; } #usbStatus { color:#254b66; font-weight:600; }
