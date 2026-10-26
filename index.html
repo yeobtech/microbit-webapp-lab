@@ -51,6 +51,8 @@
   .cv-slot img{width:100%;height:100%;object-fit:cover;object-position:center;display:block}
   .cv-foot{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:24px;align-items:end}
   .cv-foot p{grid-column:1 / span 6;margin:0;max-width:34em}
+  .cv-foot p.cv-by{grid-column:7 / span 2;display:flex;flex-direction:column;gap:2px;color:var(--c-muted);font-size:var(--s-body);line-height:1.4}
+  .cv-foot p.cv-by b{color:var(--c-ink);font-weight:650}
   .cv-start{grid-column:9 / -1;justify-self:end;display:inline-flex;align-items:center;gap:14px;min-height:56px;padding:0 32px;border:0;border-radius:0;background:var(--c-signal);color:var(--c-signal-ink)!important;font-weight:700!important;font-size:var(--s-lead)!important;cursor:pointer;transition:transform .12s var(--ease-out),background-color .2s}
   .cv-start span{transition:transform .25s var(--ease-out)}
   /* 대화 띠 */
@@ -137,7 +139,7 @@
     .cv-slot{grid-row:2;grid-column:1;width:100%;height:auto;margin:.18em 0}
     .cv-l2{grid-row:3}
     .cv-foot{grid-template-columns:1fr;gap:20px}
-    .cv-foot p,.cv-start{grid-column:1 / -1}
+    .cv-foot p,.cv-foot p.cv-by,.cv-start{grid-column:1 / -1}
     .cv-start{justify-self:stretch;justify-content:space-between}
     .cv-talk{grid-template-columns:1fr;padding-top:112px}
     .cv-talk-text,.cv-live{grid-column:1 / -1;position:static}
@@ -677,6 +679,7 @@ dialog,dialog.present{border-radius:20px}
     </h1>
     <div class="cv-foot">
       <p data-rise style="--i:2">마이크로비트가 보낸 센서값을 웹앱이 읽고 판단해요. 웹앱이 돌려보낸 명령으로 서보모터와 네오픽셀이 움직여요.</p>
+      <p class="cv-by" data-rise style="--i:3"><span>피지컬AI 동아리 소속</span><b>교사 김세엽</b></p>
       <button type="button" class="cv-start" data-go="1" data-rise style="--i:3">시작하기 <span aria-hidden="true">→</span></button>
     </div>
   </section>
