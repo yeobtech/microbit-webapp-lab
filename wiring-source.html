@@ -310,13 +310,15 @@
       <button type="button" class="btn" id="w3Toggle" aria-pressed="false">3D 작업대 열기</button>
       <button type="button" class="btn ghost" id="w3Top" disabled>위에서 보기</button>
       <button type="button" class="btn ghost" id="w3Reset" disabled>전체 보기</button>
+      <button type="button" class="btn ghost" id="w3Power" aria-pressed="false">배터리 전원 켜기</button>
       <label>부품 확대 <select id="w3Focus" disabled><option value="all">전체</option><option value="board">Robotbit 보드</option><option value="ultra">초음파센서</option><option value="servo">서보모터</option><option value="neo">네오픽셀</option></select></label>
     </div>
     <p id="w3Help" class="dnote" role="status">3D에서도 연결 기록과 연습 단계가 이어집니다.</p>
+    <p id="w3PowerState" class="w3-power-state" role="status">전원 OFF · 선을 연결할 수 있어요.</p>
     <div id="w3Panel" hidden>
       <div id="w3Viewport"></div>
       <p class="dnote">드래그로 회전 · 휠 또는 두 손가락으로 확대 · 핀을 클릭하거나 아래 이름표로 연결합니다.</p>
-      <p class="dnote">연결 관계를 배우는 간략 모형입니다. 핀 간격·부품 비율은 보기 쉽게 조정했습니다. 실제 위치는 사진 보기와 대조하세요.</p>
+      <p class="dnote">실물 사진을 참고한 학습 모형입니다. 핀 간격은 선택하기 쉽게 조정했습니다. 전원·표시등은 가상 동작이며 실제 장치에 명령을 보내지 않습니다.</p>
       <div id="w3Pins" aria-label="3D 부품별 연결 핀"></div>
     </div>
     <div class="scroll" tabindex="0" aria-label="배선 작업대. 확대하면 좌우로 밀 수 있습니다.">
@@ -425,7 +427,7 @@ const pinById = id => pins.find(p => p.id === id);
 const full = id => `${pinById(id).device} / ${pinById(id).label}`;
 const pair = (a, b) => [a, b].sort().join('|');
 
-const st = {mode: 'guide', conns: [], selected: null, hint: 0, verified: false, passed: new Set(), checks: new Set()};
+const st = {mode: 'guide', conns: [], selected: null, hint: 0, verified: false, powered: false, passed: new Set(), checks: new Set()};
 const els = {};   // 핀 id → [사진 위 점, 이름표]
 
 /* 작업대 그리기 */
@@ -482,7 +484,7 @@ function render() {
       el.classList.toggle('wired', wired.has(id));
       el.classList.toggle('hint', hintIds.includes(id));
       el.setAttribute('aria-pressed', String(st.selected === id));
-      el.disabled = st.verified;
+      el.disabled = st.verified || st.powered;
     }
     dot.querySelector('.lbl').textContent = labels ? p.label : '';
     tag.querySelector('span').textContent = labels ? p.label : `핀 ${idx + 1}`;
@@ -495,18 +497,18 @@ function render() {
     li.innerHTML = '<i></i><span></span><button type="button">선 빼기</button>';
     li.querySelector('i').style.background = w.color;
     li.querySelector('span').textContent = `${full(w.from)} ↔ ${full(w.to)}`;
-    li.querySelector('button').disabled = st.verified;
+    li.querySelector('button').disabled = st.verified || st.powered;
     li.querySelector('button').addEventListener('click', () => remove(i));
     return li;
   }));
   $('noConns').hidden = st.conns.length > 0;
   const complete = st.conns.length === scene.wires.length;
-  $('preflight').disabled = !complete || st.verified;
+  $('preflight').disabled = !complete || st.verified || st.powered;
   $('preNote').hidden = complete;
   $('preflight').querySelectorAll('input').forEach(c => { c.checked = st.checks.has(c.dataset.check); });
-  $('verifyBtn').disabled = !complete || st.checks.size < 3 || st.verified;
+  $('verifyBtn').disabled = !complete || st.checks.size < 3 || st.verified || st.powered;
   $('verifyBtn').textContent = st.verified ? '최종 확인 완료' : '전원 켜기 전 최종 확인';
-  $('undoBtn').disabled = !st.conns.length || st.verified;
+  $('undoBtn').disabled = !st.conns.length || st.verified || st.powered;
   $('hintBtn').disabled = st.verified || st.mode !== 'guide';
   document.querySelectorAll('.modes button').forEach(b => {
     b.setAttribute('aria-pressed', String(b.dataset.mode === st.mode));
@@ -574,17 +576,19 @@ function connect(a, b) {
   render();
 }
 function activate(id) {
+  if (st.powered) { say('배선을 바꾸려면 먼저 배터리 전원을 꺼 주세요.'); return; }
   if (st.verified) { say('연결을 바꾸려면 먼저 처음부터를 누르세요.'); return; }
   if (st.selected) return connect(st.selected, id);
   st.selected = id; say(`${full(id)} 선택. 연결할 반대쪽 핀을 눌러요.`); render();
 }
 function remove(i) {
+  if (st.powered || st.verified) return;
   st.conns = st.conns.filter(k => k !== i); st.checks.clear(); st.selected = null;
   st.hint = st.mode === 'guide' ? nextUnwired(st.conns) : null;
   say('선 한 개를 뺐어요. 핀 이름과 역할을 다시 확인해요.'); render();
 }
 function reset(text) {
-  Object.assign(st, {conns: [], selected: null, verified: false, hint: st.mode === 'guide' ? 0 : null});
+  Object.assign(st, {conns: [], selected: null, verified: false, powered: false, hint: st.mode === 'guide' ? 0 : null});
   st.checks.clear();
   say(text || (st.mode === 'guide' ? '빛나는 두 핀을 연결해 보세요. 검정 GND부터 시작해요.' : '선을 모두 정리했어요. 다시 연결해 보세요.'));
   render();
@@ -817,7 +821,8 @@ goStep(Number((location.hash.match(/^#step([1-5])$/) || [0, 1])[1]));
 <script>
 window.wiringLab = {
   getScene: () => scene,
-  getState: () => ({mode: st.mode, conns: [...st.conns], selected: st.selected, hint: st.hint, verified: st.verified}),
+  getState: () => ({mode: st.mode, conns: [...st.conns], selected: st.selected, hint: st.hint, verified: st.verified, powered: st.powered}),
+  togglePower: () => { st.powered = !st.powered; st.selected = null; say(st.powered ? '가상 배터리 전원을 켰어요. 배선을 바꾸려면 먼저 전원을 꺼 주세요.' : '가상 배터리 전원을 껐어요.'); render(); },
   activate: id => { if (pinById(id)) activate(id); }
 };
 </script>

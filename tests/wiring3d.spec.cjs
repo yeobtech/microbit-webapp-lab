@@ -55,7 +55,7 @@ test('pins can be selected on the 3D canvas and dragging does not connect',async
   await page.mouse.click(first.x,first.y);
   await expect(pin(page,'ultra.g')).toHaveAttribute('aria-pressed','true');
   rect=await canvas.boundingBox();
-  const second=project(-4.4,.5,-1.8);
+  const second=project(-4.02,.5,-1.8);
   await page.mouse.click(second.x,second.y);
   await expect(page.locator('#conns li')).toHaveCount(1);
   await page.mouse.move(rect.x+rect.width/2,rect.y+rect.height/2);await page.mouse.down();
@@ -67,4 +67,41 @@ test('unsupported WebGL preserves photo wiring',async({page})=>{
   await open(page);await expect(page.locator('#stage')).toBeVisible();await expect(page.locator('#w3Help')).toContainText('사진 작업대를 유지');
   await page.locator('#stage [data-pin="ultra.g"]').last().click();await page.locator('#stage [data-pin="ultraBoard.g"]').last().click();
   await expect(page.locator('#conns li')).toHaveCount(1);
+});
+test('battery switch locks editing, survives view changes, and resets safely',async({page})=>{
+  await open(page);
+  await pin(page,'ultra.g').click();await pin(page,'ultraBoard.g').click();
+  await page.locator('#w3Power').click();
+  await expect(page.locator('#w3Power')).toHaveAttribute('aria-pressed','true');
+  await expect(page.locator('#w3PowerState')).toContainText('1/10개');
+  await expect(pin(page,'neo.g')).toBeDisabled();
+  await expect(page.locator('#undoBtn')).toBeDisabled();
+  await page.locator('#w3Toggle').click();
+  await expect(page.locator('#stage [data-pin="ultra.g"]').first()).toBeDisabled();
+  await page.locator('#w3Power').click();
+  await expect(page.locator('#stage [data-pin="ultra.g"]').first()).toBeEnabled();
+  await page.locator('#w3Toggle').click();
+  const wires=await page.evaluate(()=>wiringLab.getScene().wires);
+  for(const w of wires.slice(1)){await pin(page,w.from).click();await pin(page,w.to).click();}
+  for(const c of await page.locator('#preflight input').all())await c.check();
+  await page.locator('#verifyBtn').click();
+  await page.locator('#w3Power').click();
+  await expect(page.locator('#w3PowerState')).toContainText('배선과 점검 완료');
+  await page.locator('#w3Focus').selectOption('board');
+  await page.locator('#w3Viewport').screenshot({path:'test-results/realistic-board-on.png'});
+  await page.locator('#resetBtn').click();
+  await expect(page.locator('#w3Power')).toHaveAttribute('aria-pressed','false');
+  await expect(page.locator('#conns li')).toHaveCount(0);
+  await page.locator('#w3Focus').selectOption('ultra');
+  await page.locator('#w3Viewport').screenshot({path:'test-results/realistic-ultrasonic.png'});
+});
+test('3D board switch itself toggles battery power',async({page})=>{
+  await open(page);await page.locator('#w3Top').click();
+  const canvas=page.locator('#w3Viewport canvas');
+  await canvas.evaluate(el=>window.scrollTo(0,scrollY+el.getBoundingClientRect().top-150));
+  for(const expected of ['true','false']) {
+    const rect=await canvas.boundingBox();const scale=rect.height/(2*(16-.4)*Math.tan(Math.PI/8));
+    await page.mouse.click(rect.x+rect.width/2-1.65*scale,rect.y+rect.height/2-2.4*scale);
+    await expect(page.locator('#w3Power')).toHaveAttribute('aria-pressed',expected);
+  }
 });
