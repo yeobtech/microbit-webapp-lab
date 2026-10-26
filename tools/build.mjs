@@ -10,14 +10,24 @@
 // 사용: node tools/build.mjs   (원본 페이지, 그림, 공통 코드를 고친 뒤 다시 실행)
 import fs from 'node:fs';
 import path from 'node:path';
+import {build} from 'esbuild';
+import {fileURLToPath} from 'node:url';
 
-const root = path.resolve(path.dirname(new URL(import.meta.url).pathname.replace(/^\/(\w:)/, '$1')), '..');
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const firmwarePath = path.join(root, 'makecode', '공통-makecode.ts');
 const promptPath = path.join(root, 'prompt', '프롬프트_기본HTML없음.md');
 const MIME = {'.webp': 'image/webp', '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.svg': 'image/svg+xml'};
 const PAGES = [['source.html', 'index.html'], ['wiring-source.html', 'wiring.html'], ['practice-source.html', 'practice.html'], ['assessment-source.html', 'assessment.html']];
 
 const used = new Set();
+// Bundle locally: distributed HTML works without a CDN or neighbouring model files.
+const lanternBundle = await build({entryPoints:[path.join(root,'tools','lantern.js')],bundle:true,minify:true,write:false,format:'iife',legalComments:'inline',supported:{'template-literal':false}});
+const threeLicense = fs.readFileSync(path.join(root,'node_modules','three','LICENSE'),'utf8');
+const lanternJS = ('/* Three.js license\n' + threeLicense + '\n*/\n' + lanternBundle.outputFiles[0].text).replace(/<\/script/gi, '<\\/script');
+function embedLantern(page) {
+  return page.replace('<!-- LANTERN:CSS -->', () => '<style>' + fs.readFileSync(path.join(root,'tools','lantern.css'),'utf8') + '</style>')
+    .replace('<!-- LANTERN:JS -->', () => '<script>' + lanternJS + '</script>');
+}
 
 function embedFirmware(page) {
   const start = page.indexOf('<!-- FIRMWARE:START');
@@ -112,7 +122,7 @@ function inlineImages(page) {
 }
 
 for (const [src, dst] of PAGES) {
-  const page = inlineImages(embedLesson(embedPrompt(embedFirmware(fs.readFileSync(path.join(root, src), 'utf8')))));
+  const page = embedLantern(inlineImages(embedLesson(embedPrompt(embedFirmware(fs.readFileSync(path.join(root, src), 'utf8').replace(/\r\n/g, '\n'))))));
   fs.writeFileSync(path.join(root, dst), page);
   console.log(`${dst} 완성: ${(page.length / 1024).toFixed(0)}KB`);
 }

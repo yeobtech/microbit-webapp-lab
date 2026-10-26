@@ -23,7 +23,13 @@ CC BY-SA 사진을 고쳐서 나눌 때는 같은 CC BY-SA 라이선스로 나�
 |---|---|---|---|
 | Pretendard | 길형진(orioncactus) | [SIL Open Font License 1.1](https://github.com/orioncactus/pretendard/blob/main/LICENSE) | 저장소에 파일을 넣지 않고, 페이지가 jsDelivr CDN에서 불러옵니다 |
 
-## 상표
+## 3D 라이브러리
+
+Three.js 0.186.1 — three.js authors, [MIT](https://github.com/mrdoob/three.js/blob/dev/LICENSE).
+빌드한 `index.html` 안에 라이브러리와 전체 라이선스 고지를 포함합니다.
+등불 모형은 외부 모델 없이 코드의 기본 도형으로 구성했습니다.
+
+## 상표 안내
 
 micro:bit은 Micro:bit Educational Foundation, MakeCode는 Microsoft, Gemini·Chrome·Google Classroom은 Google, 투닝(Tooning)은 툰스퀘어의 상표입니다.
 이 저장소는 위 회사들과 관계가 없으며, 수업에서 쓰는 방법을 설명하려고 이름과 화면을 보여 줍니다.

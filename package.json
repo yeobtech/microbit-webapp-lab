@@ -1,0 +1,32 @@
+{
+  "name": "microbit-webapp-lab",
+  "version": "1.0.0",
+  "description": "마이크로비트의 센서값을 웹앱으로 보내고, 웹앱이 판단해서 서보모터와 네오픽셀을 움직이는 발명품을 만드는 중학교 수업 자료입니다.\r 학생은 제미나이로 자기 웹앱을 만들고, 크롬의 Web Serial로 실제 장치와 연결합니다.",
+  "directories": {
+    "example": "examples"
+  },
+  "scripts": {
+    "build": "node tools/build.mjs",
+    "test": "playwright test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yeobtech/microbit-webapp-lab.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/yeobtech/microbit-webapp-lab/issues"
+  },
+  "homepage": "https://github.com/yeobtech/microbit-webapp-lab#readme",
+  "dependencies": {
+    "three": "0.186.1"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.64.1",
+    "esbuild": "0.28.2"
+  },
+  "private": true
+}

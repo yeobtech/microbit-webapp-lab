@@ -437,7 +437,14 @@
     <div class="card-head"><span class="card-num">1-3</span><h2 id="c13">직접 체험하기</h2></div>
     <p class="lead">장치가 없어도 괜찮아요. 슬라이더와 버튼으로 센서값을 바꾸면, 웹앱이 판단해서 명령을 보냅니다.</p>
     <div class="demo">
-      <div class="scene" aria-live="polite">
+      <div class="scene lantern-scene">
+        <div class="lantern-toolbar" role="group" aria-label="등불 보기 방식">
+          <button type="button" id="lantern3d" aria-pressed="false">3D 보기</button>
+          <button type="button" id="lanternInside" aria-pressed="false" disabled>내부 보기</button>
+          <button type="button" id="lanternReset" disabled>시점 초기화</button>
+          <button type="button" id="lanternTurn" disabled>90° 돌리기</button>
+        </div>
+        <div id="lanternViewport" hidden></div>
         <div class="msg" id="demoMsg"></div>
         <svg viewBox="0 0 300 220" role="img" aria-label="등불 그림. 서보모터 각도에 따라 덮개가 열리고 네오픽셀 색으로 빛난다">
           <defs><radialGradient id="glow"><stop offset="0" stop-color="#ffd27a" stop-opacity=".9"/><stop offset="1" stop-color="#ffd27a" stop-opacity="0"/></radialGradient></defs>
@@ -450,6 +457,8 @@
         </svg>
         <div class="pixels" id="demoPixels" aria-label="네오픽셀 6개"><span></span><span></span><span></span><span></span><span></span><span></span></div>
         <div class="servo-read">서보모터 <b id="demoServo">0°</b> · 덮개 <b id="demoCoverText">닫힘</b></div>
+        <p id="lanternHint" class="lantern-hint" role="status">3D 보기로 등불을 돌려 보세요. 현재 그림도 같은 규칙으로 움직입니다.</p>
+        <p class="lantern-caption">작동 원리를 보여주는 모형입니다. 실제 장치의 치수·배선과는 다릅니다.</p>
       </div>
       <div class="controls">
         <label for="inBright">밝기 센서</label>
@@ -845,7 +854,9 @@ function draw() {
   $('demoCover').style.transform = `rotate(${-demo.servo}deg)`;
   $('demoServo').textContent = demo.servo + '°';
   $('demoCoverText').textContent = demo.servo >= 45 ? '열림' : '닫힘';
+  window.dispatchEvent(new CustomEvent('lantern-state', {detail: {servo: demo.servo, pixels: demo.pixels}}));
 }
+window.getLanternState = () => ({servo: demo.servo, pixels: demo.pixels});
 function message(text, color) {
   const m = $('demoMsg');
   m.textContent = text || ''; m.style.color = color || '#ffd27a'; m.style.opacity = text ? '1' : '0';
@@ -863,7 +874,7 @@ function judge() {
     }
     return;
   }
-  if (demo.warning) { demo.warning = false; demo.rainbow = false; message(''); send('L,0,0,0'); coverOpen = false; }
+  if (demo.warning) { demo.warning = false; demo.rainbow = false; message(''); send('L,0,0,0'); coverOpen = true; }
   if (bright < 50) {
     if (!coverOpen || !demo.rainbow) {
       send('S,90'); send('B,80'); send('R');
@@ -1072,5 +1083,7 @@ setInterval(() => {
 if ('serial' in navigator) navigator.serial.addEventListener('disconnect', e => { if (ser.port && e.target === ser.port) { ser.closing = false; disconnect(); tStatus('USB가 뽑혔습니다.', 'bad'); } });
 </script>
 <!-- LESSON:JS -->
+<!-- LANTERN:CSS -->
+<!-- LANTERN:JS -->
 </body>
 </html>

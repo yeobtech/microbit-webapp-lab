@@ -1,0 +1,13 @@
+.lantern-scene { overflow:hidden; }
+.lantern-toolbar { display:flex; flex-wrap:wrap; gap:8px; position:relative; z-index:1; }
+.lantern-toolbar button { border:1px solid #64748b; background:#202c40; color:#f8fafc; padding:8px 12px; border-radius:8px; font-size:14px; }
+.lantern-toolbar button[aria-pressed="true"] { background:#f2b705; color:#172019; border-color:#f2b705; }
+.lantern-toolbar button:disabled { opacity:.4; cursor:not-allowed; }
+.lantern-toolbar button:focus-visible, #lanternViewport canvas:focus-visible { outline:3px solid #f2b705; outline-offset:3px; }
+#lanternViewport { height:360px; margin-top:12px; border-radius:12px; overflow:hidden; background:#eee9dc; }
+#lanternViewport[hidden] { display:none; }
+#lanternViewport canvas { display:block; width:100%; height:100%; touch-action:pan-y; }
+.lantern-scene .msg { position:static; min-height:30px; margin:8px 0; font-size:18px; }
+.lantern-hint { color:#e0e8f4; font-size:14px; margin:12px 0 4px; }
+.lantern-caption { color:#b9c3dc; font-size:12px; margin:4px 0 0; }
+@media(max-width:600px) { #lanternViewport { height:300px; } }
