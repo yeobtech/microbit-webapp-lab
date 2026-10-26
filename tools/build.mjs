@@ -24,9 +24,13 @@ const used = new Set();
 const lanternBundle = await build({entryPoints:[path.join(root,'tools','lantern.js')],bundle:true,minify:true,write:false,format:'iife',legalComments:'inline',supported:{'template-literal':false}});
 const threeLicense = fs.readFileSync(path.join(root,'node_modules','three','LICENSE'),'utf8');
 const lanternJS = ('/* Three.js license\n' + threeLicense + '\n*/\n' + lanternBundle.outputFiles[0].text).replace(/<\/script/gi, '<\\/script');
+const wiringBundle = await build({entryPoints:[path.join(root,'tools','wiring3d.js')],bundle:true,minify:true,write:false,format:'iife',legalComments:'inline',supported:{'template-literal':false}});
+const wiringJS = ('/* Three.js license\n' + threeLicense + '\n*/\n' + wiringBundle.outputFiles[0].text).replace(/<\/script/gi, '<\\/script');
 function embedLantern(page) {
   return page.replace('<!-- LANTERN:CSS -->', () => '<style>' + fs.readFileSync(path.join(root,'tools','lantern.css'),'utf8') + '</style>')
-    .replace('<!-- LANTERN:JS -->', () => '<script>' + lanternJS + '</script>');
+    .replace('<!-- LANTERN:JS -->', () => '<script>' + lanternJS + '</script>')
+    .replace('<!-- WIRING3D:CSS -->', () => '<style>' + fs.readFileSync(path.join(root,'tools','wiring3d.css'),'utf8') + '</style>')
+    .replace('<!-- WIRING3D:JS -->', () => '<script>' + wiringJS + '</script>');
 }
 
 function embedFirmware(page) {

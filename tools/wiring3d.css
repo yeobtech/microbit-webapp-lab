@@ -1,0 +1,18 @@
+.w3-toolbar { display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin:18px 0 8px; }
+.w3-toolbar label { display:flex; align-items:center; gap:8px; font-size:15px; }
+.w3-toolbar select { max-width:190px; padding:8px; }
+#w3Panel[hidden], .scroll[hidden] { display:none; }
+#w3Viewport { height:560px; width:100%; overflow:hidden; border:1px solid #c9c8bb; border-radius:16px; background:#e9e6dc; }
+#w3Viewport canvas { display:block; width:100%; height:100%; touch-action:none; }
+#w3Viewport canvas:focus-visible { outline:3px solid #df9100; outline-offset:-4px; }
+#w3Pins { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; margin:16px 0; }
+#w3Pins section { border:1px solid var(--line); border-radius:12px; padding:12px; min-width:0; }
+#w3Pins h3 { font-size:16px; margin:0 0 10px; }
+.w3-pinlist { display:flex; flex-wrap:wrap; gap:6px; }
+.w3-pinlist button { display:flex; align-items:center; gap:7px; font:inherit; font-size:14px; background:var(--card); color:var(--ink); border:2px solid var(--line); border-radius:8px; padding:8px; min-height:42px; }
+.w3-pinlist button i { width:10px; height:10px; background:var(--pin-color); border:1px solid #777; border-radius:50%; flex:none; }
+.w3-pinlist button[data-hint="true"] { border-color:#be7d00; background:#fff4cd; }
+.w3-pinlist button[aria-pressed="true"] { outline:3px solid #2476c5; outline-offset:1px; }
+.w3-pinlist button[data-wired="true"] { border-color:#18734f; }
+.w3-pinlist button:disabled { opacity:.6; }
+@media(max-width:640px) { #w3Viewport { height:410px; } #w3Pins { grid-template-columns:1fr; } .w3-toolbar .btn { padding:9px 12px; font-size:14px; } }

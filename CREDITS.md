@@ -26,8 +26,8 @@ CC BY-SA 사진을 고쳐서 나눌 때는 같은 CC BY-SA 라이선스로 나�
 ## 3D 라이브러리
 
 Three.js 0.186.1 — three.js authors, [MIT](https://github.com/mrdoob/three.js/blob/dev/LICENSE).
-빌드한 `index.html` 안에 라이브러리와 전체 라이선스 고지를 포함합니다.
-등불 모형은 외부 모델 없이 코드의 기본 도형으로 구성했습니다.
+빌드한 `index.html`, `wiring.html` 안에 라이브러리와 전체 라이선스 고지를 포함합니다.
+등불과 배선 작업대의 모형은 외부 3D 모델 없이 코드의 기본 도형으로 구성했습니다.
 
 ## 상표 안내
 
