@@ -2,6 +2,7 @@
 //   source.html        → index.html   (1·2단계)
 //   wiring-source.html → wiring.html  (배선 연습)
 //   practice-source.html → practice.html (3단계 활동지 실습)
+//   assessment-source.html → assessment.html (수행평가 과정 기록)
 // - FIRMWARE 표시가 있으면 makecode/공통-makecode.ts 내용을 그 사이에 넣는다.
 // - PROMPT 표시가 있으면 prompt/프롬프트_기본HTML없음.md의 [A] 항목, [B] 규칙, 작성 예시를 넣는다.
 // - LESSON:CSS / LESSON:JS 표시 자리에 tools/lesson.css, tools/lesson.js(수업 페이지 공통 디자인)를 넣는다.
@@ -14,7 +15,7 @@ const root = path.resolve(path.dirname(new URL(import.meta.url).pathname.replace
 const firmwarePath = path.join(root, 'makecode', '공통-makecode.ts');
 const promptPath = path.join(root, 'prompt', '프롬프트_기본HTML없음.md');
 const MIME = {'.webp': 'image/webp', '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.svg': 'image/svg+xml'};
-const PAGES = [['source.html', 'index.html'], ['wiring-source.html', 'wiring.html'], ['practice-source.html', 'practice.html']];
+const PAGES = [['source.html', 'index.html'], ['wiring-source.html', 'wiring.html'], ['practice-source.html', 'practice.html'], ['assessment-source.html', 'assessment.html']];
 
 const used = new Set();
 

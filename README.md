@@ -13,6 +13,7 @@
 | 2 연결하기 | `index.html` | 준비물과 배선, 공통 코드 넣기(메이크코드), 메이크코드 탭 닫기, 연결 시험기 |
 | 2-1 배선 연습 | `wiring.html` | 점퍼선, 꽂고 빼는 방법, 내 보드, G·V·S와 핀 번호, 함께 연결(사진 위 배선 연습) |
 | 3 활동지 실습 | `practice.html` | 활동지 옮겨 쓰기 → 프롬프트 완성 → 만들고 저장 → 시험하고 고치기 → 공유·설명 → 느낀 점 |
+| 기록 | `assessment.html` | 수행평가 과정: 아이디어(구글 폼·활동지) → HTML 웹앱 → 메이크코드, 채점 기준 |
 
 ## 준비물
 
@@ -30,8 +31,8 @@
 ## 파일 구조
 
 ```
-index.html, wiring.html, practice.html   ← 나눠 주는 완성본 (사진이 모두 들어 있어 파일 하나로 열림)
-source.html, wiring-source.html, practice-source.html   ← 고칠 때 손대는 원본
+index.html, wiring.html, practice.html, assessment.html   ← 나눠 주는 완성본 (사진이 모두 들어 있어 파일 하나로 열림)
+source.html, wiring-source.html, practice-source.html, assessment-source.html   ← 고칠 때 손대는 원본
 tools/build.mjs     ← 원본 → 완성본 만들기
 tools/lesson.css    ← 수업 페이지 공통 디자인
 tools/lesson.js     ← 들어올 때의 움직임, 효과음
