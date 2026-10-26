@@ -203,6 +203,7 @@
   <li><button type="button" data-step-go="4"><span class="num">4</span><span class="label">시험하고 고치기</span></button></li>
   <li><button type="button" data-step-go="5"><span class="num">5</span><span class="label">공유·설명하기</span></button></li>
   <li><button type="button" data-step-go="6"><span class="num">6</span><span class="label">느낀 점 나누기</span></button></li>
+  <li><button type="button" data-step-go="7"><span class="num">7</span><span class="label">보충학습 · 코드 이해</span></button></li>
 </ol></div></nav>
 
 <main class="wrap">
@@ -508,6 +509,7 @@
   </section>
 </div>
 
+<!-- CODELESSON -->
 <dialog class="present" id="cardDlg" aria-label="작품 소개 카드 크게 보기">
   <button type="button" class="btn ghost" id="cardDlgClose">닫기</button>
   <div id="cardDlgBody"></div>
@@ -887,7 +889,7 @@ $('reflCopy').addEventListener('click', async () => {
 });
 
 /* 단계 이동 */
-const STEPS = 6;
+const STEPS = 7;
 let curStep = 1;
 function stepDone(n) {
   if (n === '1') return filled().length === P.fields.length;
@@ -914,13 +916,15 @@ function goStep(n) {
   if (curStep === 6) { fillChips(); renderRefl(); }
   if (curStep !== 5 && talkTimer) stopTalk();
   history.replaceState(null, '', '#step' + curStep);
-  updateStepper(); window.scrollTo({top: 0});
+  updateStepper();
+  document.querySelector('[data-step-go="' + curStep + '"]')?.scrollIntoView({block: 'nearest', inline: 'center'});
+  window.scrollTo({top: 0});
 }
 document.querySelectorAll('[data-step-go]').forEach(b => b.addEventListener('click', () => goStep(Number(b.dataset.stepGo))));
 $('prevStep').addEventListener('click', () => goStep(curStep - 1));
 $('nextStep').addEventListener('click', () => goStep(curStep + 1));
 renderChecks(); renderChecklist(); renderStars(); renderChecklist.ready = true;
-goStep(Number((location.hash.match(/^#step([1-6])$/) || [0, 1])[1]));
+goStep(Number((location.hash.match(/^#step([1-7])$/) || [0, 1])[1]));
 </script>
 <!-- LESSON:JS -->
 </body>

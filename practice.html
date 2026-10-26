@@ -553,6 +553,7 @@ dialog,dialog.present{border-radius:20px}
   <li><button type="button" data-step-go="4"><span class="num">4</span><span class="label">시험하고 고치기</span></button></li>
   <li><button type="button" data-step-go="5"><span class="num">5</span><span class="label">공유·설명하기</span></button></li>
   <li><button type="button" data-step-go="6"><span class="num">6</span><span class="label">느낀 점 나누기</span></button></li>
+  <li><button type="button" data-step-go="7"><span class="num">7</span><span class="label">보충학습 · 코드 이해</span></button></li>
 </ol></div></nav>
 
 <main class="wrap">
@@ -855,6 +856,277 @@ dialog,dialog.present{border-radius:20px}
       </li>
     </ol>
     <div class="done-box" id="finalBox" hidden style="margin-top:14px">수고했어요! 센서값을 보내는 장치와, 그 값을 보고 판단하는 웹앱을 내 손으로 연결했어요.</div>
+  </section>
+</div>
+
+<div data-step="7" hidden class="code-lesson">
+  <style>
+    .code-lesson { overflow-wrap:anywhere; }
+    .code-lesson .code-flow { display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:20px 0;padding:0;list-style:none; }
+    .code-lesson .code-flow li { background:#edf5fc;color:#294658;border-radius:18px;padding:14px 18px; }
+    .code-lesson pre { background:#202e38;color:#edf5fc;padding:18px;border-radius:18px;overflow:auto;font:14px/1.8 ui-monospace,Consolas,monospace;white-space:pre-wrap; }
+    .code-lesson pre code { background:transparent;color:inherit;padding:0; }
+    .code-lesson details { margin:14px 0;border:1px solid #cbded2;border-radius:18px;padding:16px;background:#f4f8f4; }
+    .code-lesson summary { cursor:pointer;font-weight:700; }
+    .code-lesson .code-table { overflow-x:auto; }
+    .code-lesson .code-note { padding:16px;border-radius:18px;background:#fff4df;color:#60491e; }
+    .code-lesson .full-code { max-height:520px;white-space:pre; }
+  </style>
+  <section class="head">
+    <h1>보충학습: 공통 코드는 무슨 일을 할까요?</h1>
+    <p>작품을 만든 뒤 읽는 선택 학습입니다. 모든 줄을 외우기보다 <b>센서값 → 웹앱의 판단 → 명령 → 장치의 동작</b>을 설명할 수 있으면 됩니다.</p>
+    <p>자료 기준: 공통 메이크코드 버전 5(2026-10-19). 아래 예시는 읽기 연습이며 실제 장치로 명령을 보내지 않습니다.</p>
+  </section>
+
+  <section class="card">
+    <h2>1. 먼저 역할을 나눠 봐요</h2>
+    <ol class="code-flow" aria-label="정보가 오가는 순서">
+      <li>① 마이크로비트<br><b>센서값 측정</b></li>
+      <li>② USB → 웹앱<br><b>조건 판단</b></li>
+      <li>③ USB → 마이크로비트<br><b>명령 읽기</b></li>
+      <li>④ 서보·네오픽셀<br><b>동작 실행</b></li>
+    </ol>
+    <p>이 코드에는 “어두워지면 덮개 열기” 같은 작품의 판단 규칙이 없습니다. <b>밝기를 읽어서 보내는 일</b>과 <b>받은 각도로 서보를 움직이는 일</b>을 맡습니다. “얼마나 어두우면 열까?”는 웹앱에서 정합니다.</p>
+    <p class="code-note">PC의 데이터용 5핀 USB는 <b>마이크로비트 위쪽 단자</b>에 연결해요. 확장보드 USB는 충전용입니다. 코드를 넣은 뒤에는 MakeCode 탭을 닫거나 연결을 해제하고 웹앱에서 연결하세요.</p>
+  </section>
+
+  <section class="card">
+    <h2>2. 시작할 때 한 번 준비해요</h2>
+    <pre><code>let PIXEL_COUNT = 6
+let strip = neopixel.create(DigitalPin.P15, PIXEL_COUNT, NeoPixelMode.RGB)
+let pixelColors = [0, 0, 0, 0, 0, 0]
+strip.setBrightness(40)
+strip.clear()
+strip.show()
+serial.redirectToUSB()
+serial.setBaudRate(BaudRate.BaudRate115200)</code></pre>
+    <ul>
+      <li><code>PIXEL_COUNT</code>: LED가 몇 개인지 저장하는 변수예요. 이 작품에서는 6개입니다.</li>
+      <li><code>strip</code>: P15에 연결된 네오픽셀을 제어하는 대상입니다. <code>pixelColors</code> 배열은 LED 6개의 색을 기억하는 칸이에요.</li>
+      <li>밝기를 40으로 설정하고 저장된 출력을 지운 뒤 <code>show()</code>로 꺼진 상태를 반영합니다.</li>
+      <li><code>serial</code>: USB로 글자를 주고받을 준비입니다. 웹앱의 통신 속도도 115200으로 맞춥니다.</li>
+    </ul>
+    <p>수업의 확장은 <b>robotbit</b>을 사용합니다. 이 프로젝트에서는 robotbit에 포함된 neopixel 기능을 쓰므로 별도로 중복 추가하지 않습니다.</p>
+  </section>
+
+  <section class="card">
+    <h2>3. 반복하면서 받고, 때가 되면 보내요</h2>
+    <pre><code>basic.forever(function () {
+    readCommands()
+    if (input.runningTime() - lastSend &gt;= 200) {
+        lastSend = input.runningTime()
+        sendSensors()
+    }
+    basic.pause(20)
+})</code></pre>
+    <ol>
+      <li><code>readCommands()</code>로 웹앱에서 온 글자를 꺼내 읽어요.</li>
+      <li>마지막 전송 시각인 <code>lastSend</code>에서 200ms 이상 지났으면 <code>sendSensors()</code>를 실행해요.</li>
+      <li>20ms 쉬고 다시 반복합니다. 1000ms는 1초예요.</li>
+    </ol>
+    <p>명령은 자주 확인하고 센서값은 약 0.2초 간격으로 보내려는 구조입니다. 센서 측정과 명령 실행에도 시간이 걸리므로 <b>정확히 20ms·200ms마다 실행되는 타이머는 아닙니다.</b></p>
+    <p><code>basic.showIcon(IconNames.Yes)</code>의 체크 표시는 코드 시작을 알리는 표시예요. USB 통신과 모든 배선이 정상이라는 검사 결과는 아닙니다.</p>
+  </section>
+
+  <section class="card">
+    <h2>4. 센서값 한 줄을 해석해요</h2>
+    <p><code>sendSensors()</code>가 읽은 값을 쉼표로 이어 <code>serial.writeLine()</code>으로 보내요. 맨 앞의 <code>D</code>는 데이터라는 표식이고, 뒤에는 값 8개가 옵니다.</p>
+    <pre><code>D,거리,흔들림,밝기,온도,A,B,앞뒤기울기,좌우기울기
+D,25,80,30,24,0,1,10,-5</code></pre>
+    <p>예시를 읽으면 “거리 25cm, 흔들림 지표 80mg, 밝기 30, 온도 24℃, A는 안 누름, B는 누름, 앞뒤 10도, 좌우 −5도”입니다.</p>
+    <details><summary>거리·흔들림 숫자는 어떻게 만들까요?</summary>
+      <p><b>초음파 거리:</b> P14(Trig)에 짧은 신호를 주고 P13(Echo)의 HIGH 지속 시간을 <code>pulseIn()</code>으로 잽니다. 그 시간을 58로 나누고 반올림해 cm로 환산합니다. 응답이 없거나 이 코드의 인정 범위인 2~400cm를 벗어나면 <code>-1</code>을 보냅니다.</p>
+      <p><b>흔들림 지표:</b> X·Y·Z 가속도의 크기를 구한 뒤 중력 기준값 1024와의 차이에 절댓값을 취합니다. 가만히 두었을 때 대체로 작고 움직일 때 커지는 간단한 지표이며, 이동 거리나 모든 움직임을 정확히 나타내는 값은 아닙니다.</p>
+      <p><b>밝기와 온도:</b> 밝기는 0~255 범위의 값이며 lux 단위가 아닙니다. 온도는 보드 내부 센서값이므로 주변 기온과 차이가 날 수 있어요.</p>
+    </details>
+    <p class="code-note"><code>distance = -1</code>은 “아주 가까움”이 아니라 <b>측정 실패</b>입니다. 웹앱에서 “20cm 미만”을 검사할 때에는 먼저 유효한 거리인지 확인해야 해요.</p>
+  </section>
+
+  <section class="card">
+    <h2>5. 웹앱의 짧은 명령을 동작으로 바꿔요</h2>
+    <p><code>runCommand()</code>는 한 줄을 쉼표로 나눠 명령과 숫자를 읽습니다. 아래 명령들은 실제로 보낼 때 <b>끝에 줄바꿈(<code>\n</code>)</b>이 필요합니다.</p>
+    <div class="code-table"><table class="tbl">
+      <thead><tr><th>명령 예시</th><th>실행하는 일</th><th>읽을 때 주의할 점</th></tr></thead>
+      <tbody>
+        <tr><td><code>S,90</code></td><td>S1 서보를 90도로 설정</td><td>각도는 0~180. S1은 P1과 달라요.</td></tr>
+        <tr><td><code>L,255,0,0</code></td><td>LED 6개를 모두 빨강으로</td><td>빨강·초록·파랑 순서. 0,0,0은 꺼짐.</td></tr>
+        <tr><td><code>P,2,0,0,255</code></td><td>세 번째 LED만 파랑으로</td><td>번호는 0부터 시작해서 0~5예요.</td></tr>
+        <tr><td><code>B,80</code></td><td>출력 밝기를 80으로 변경</td><td>범위 0~255. 센서 밝기와는 다른 값입니다.</td></tr>
+        <tr><td><code>R</code></td><td>6개에 무지개색 배치</td><td>이 명령 한 번으로 계속 회전하지는 않아요.</td></tr>
+        <tr><td><code>T</code></td><td>마지막 색을 맨 앞으로 이동</td><td>반복해서 보내면 색이 한 칸씩 돌아갑니다.</td></tr>
+      </tbody>
+    </table></div>
+    <details><summary>왜 색을 배열에 기억하고 다시 칠할까요?</summary>
+      <p><code>pixelColors</code>는 원래 색을 기억합니다. <code>renderPixels()</code>는 6개를 반복하며 <code>setPixelColor()</code>로 칠한 뒤 <code>show()</code>로 반영합니다. 밝기를 바꿔도 저장한 색으로 다시 칠할 수 있어요.</p>
+      <p><code>T</code>는 <code>pop()</code>으로 마지막 색을 꺼내 <code>unshift()</code>로 맨 앞에 넣습니다. 예를 들어 [빨강, 주황, 노랑, 초록, 파랑, 보라]는 [보라, 빨강, 주황, 노랑, 초록, 파랑]이 됩니다.</p>
+    </details>
+    <details><summary>숫자가 범위를 벗어나면 어떻게 될까요?</summary>
+      <p><code>clampNumber()</code>는 RGB와 밝기를 0~255에 맞춥니다. 이 함수에서는 숫자로 해석되지 않는 값도 최솟값으로 처리됩니다. 반면 <code>S,200</code>은 180도로 바뀌는 것이 아니라, 서보 각도 검사에서 걸러져 실행되지 않습니다. LED 번호도 0~5인지 검사합니다.</p>
+    </details>
+  </section>
+
+  <section class="card">
+    <h2>6. USB 글자가 나뉘어 도착해도 한 줄로 모아요</h2>
+    <p>명령이 반드시 한 번에 도착하는 것은 아닙니다. <code>readCommands()</code>는 받은 글자를 <code>receivedText</code>에 이어 붙이고, 줄바꿈을 찾을 때까지 기다립니다.</p>
+    <pre><code>첫 번째 수신: "S,"
+두 번째 수신: "90\n"
+모은 한 줄:   "S,90" → runCommand() 실행</code></pre>
+    <p>한꺼번에 여러 줄이 오면 <code>while</code> 반복문으로 완성된 줄들을 차례로 실행합니다. 마지막에 남은 불완전한 줄은 다음 수신 때 이어 붙입니다. 완성된 줄을 처리한 뒤 남은 글자가 100자를 넘으면 비웁니다.</p>
+  </section>
+
+  <section class="card">
+    <h2>7. 예측한 뒤 정답을 열어 봐요</h2>
+    <details><summary>① 밝기 30을 받으면 공통 코드가 스스로 S,90을 결정할까요?</summary><p><b>아니요.</b> 공통 코드는 밝기 30을 보냅니다. 웹앱이 조건을 판단하고 <code>S,90</code>을 보내야 서보가 움직입니다.</p></details>
+    <details><summary>② P,2,0,255,0은 몇 번째 LED를 무슨 색으로 바꿀까요?</summary><p><b>세 번째 LED를 초록색</b>으로 바꿉니다. LED 번호는 0부터 세고, RGB의 가운데 값이 초록입니다.</p></details>
+    <details><summary>③ S,90을 보냈는데 줄바꿈을 빠뜨리면 바로 실행될까요?</summary><p><b>바로 실행되지 않습니다.</b> <code>readCommands()</code>가 줄바꿈을 찾아 한 줄이 완성됐다고 판단해야 실행합니다.</p></details>
+    <details><summary>④ 거리 −1을 받았을 때 장애물이 바로 앞에 있다고 판단해도 될까요?</summary><p><b>안 됩니다.</b> 이 코드에서 −1은 측정 실패입니다. 유효한 거리인지 먼저 검사해야 합니다.</p></details>
+  </section>
+
+  <section class="card">
+    <h2>마지막으로, 친구에게 30초 동안 설명해 봐요</h2>
+    <ol>
+      <li><b>역할:</b> “마이크로비트는 센서값을 읽고, 웹앱은 그 값으로 판단해.”</li>
+      <li><b>예시:</b> “밝기 30을 보내면 웹앱이 어둡다고 판단해서 S,90을 보낼 수 있어.”</li>
+      <li><b>실행:</b> “공통 코드가 명령을 읽고 S1 서보를 90도로 움직여.”</li>
+      <li><b>확인:</b> “그래서 조건을 바꾸려면 웹앱을 고치고, 핀 번호와 통신 약속은 서로 맞춰야 해.”</li>
+    </ol>
+    <p>내 작품의 센서·조건·명령으로 바꿔 설명해 보세요. “내가 바꾼 조건은 ___이고, 웹앱이 보내는 명령은 ___입니다.”</p>
+    <details><summary>공통 코드 전체 펼쳐서 함수 찾아보기</summary>
+      <p><code>readCommands</code> → <code>runCommand</code> → <code>sendSensors</code> → 마지막 반복문 순서로 찾아보세요. 아래 코드는 빌드할 때 사이트의 공통 코드 원본에서 가져옵니다.</p>
+      <pre class="full-code"><code>// 기본 HTML 없이 쓰는 공통 메이크코드 (버전 5, 2026-10-19: 반복문을 함수 뒤로 옮김, 초음파를 sonar 확장 방식으로 맞춤)
+// 사용 전 꼭: 다운로드한 뒤 MakeCode 탭을 닫거나 '연결 해제'하세요.
+//   MakeCode가 연결된 채로 있으면 시리얼 데이터를 같이 가져가서 웹앱에 글자가 빠진 채 도착합니다.
+// 확장: robotbit (KittenBot) 하나만 추가하세요. neopixel은 robotbit에 들어 있습니다.
+//   neopixel을 따로 추가하면 "호환되지 않습니다" 창이 뜹니다. (2026-10-16 메이크코드에서 확인)
+// 서보 S1 / 외장 네오픽셀 P15 (6개) / 초음파 Trig P14, Echo P13
+// 이 코드는 센서값을 보내고, 받은 명령대로만 움직입니다. 작동 조건은 웹앱이 판단합니다.
+//
+// 장치 → 웹 (0.2초마다)
+//   D,거리,흔들림,밝기,온도,A버튼,B버튼,앞뒤기울기,좌우기울기
+//   거리 cm(-1 = 측정 실패) / 흔들림 mg / 밝기 0~255 / 온도 ℃
+//   버튼 0·1 / 앞뒤기울기·좌우기울기 도(-180~180)
+// 웹 → 장치
+//   S,각도            서보 S1 (0~180)
+//   L,빨강,초록,파랑    네오픽셀 전체 한 색 (각 0~255, L,0,0,0 = 끄기)
+//   P,번호,빨강,초록,파랑  네오픽셀 한 개 (번호 0~5)
+//   B,밝기            네오픽셀 밝기 (0~255)
+//   R                 무지개색
+//   T                 색을 한 칸씩 옆으로 돌리기 (반복해서 보내면 움직이는 효과)
+let PIXEL_COUNT = 6
+let strip = neopixel.create(DigitalPin.P15, PIXEL_COUNT, NeoPixelMode.RGB)
+// 블록 변환 후에도 사라지지 않도록 배열을 값 6개로 바로 만듭니다.
+let pixelColors = [0, 0, 0, 0, 0, 0]
+strip.setBrightness(40)
+strip.clear()
+strip.show()
+serial.redirectToUSB()
+serial.setBaudRate(BaudRate.BaudRate115200)
+// 버퍼 크기는 기본값을 씁니다. (setTxBufferSize를 넣었을 때 깨짐이 늘었던 측정이 있어 넣지 않습니다.)
+function clampNumber(value: number, low: number, high: number) {
+    if (!(value &gt;= low)) return low
+    if (value &gt; high) return high
+    return value
+}
+// 밝기는 색을 칠할 때 적용되므로, 저장해 둔 색으로 매번 다시 칠합니다.
+function renderPixels() {
+    for (let i = 0; i &lt; PIXEL_COUNT; i++) {
+        strip.setPixelColor(i, pixelColors[i])
+    }
+    strip.show()
+}
+function toColor(red: string, green: string, blue: string) {
+    return neopixel.rgb(
+        clampNumber(parseInt(red), 0, 255),
+        clampNumber(parseInt(green), 0, 255),
+        clampNumber(parseInt(blue), 0, 255))
+}
+// 명령 받기 이벤트(serial.onDataReceived) 대신, 반복문에서 받은 글자를 직접 꺼내 와
+// 줄바꿈 단위로 명령을 실행합니다. 이 방식으로 실물 검증을 마쳤습니다.
+let receivedText = ""
+function readCommands() {
+    receivedText = receivedText + serial.readString()
+    let newline = receivedText.indexOf("\n")
+    while (newline &gt;= 0) {
+        runCommand(receivedText.substr(0, newline))
+        receivedText = receivedText.substr(newline + 1, receivedText.length)
+        newline = receivedText.indexOf("\n")
+    }
+    // 줄바꿈 없이 너무 길어지면 잘못 들어온 글자로 보고 버립니다.
+    if (receivedText.length &gt; 100) {
+        receivedText = ""
+    }
+}
+function runCommand(line: string) {
+    let fields = line.split(",")
+    let command = fields[0].charAt(0)
+    if (command == "S" &amp;&amp; fields.length == 2) {
+        let target = parseInt(fields[1])
+        if (target &gt;= 0 &amp;&amp; target &lt;= 180) {
+            robotbit.Servo(robotbit.Servos.S1, target)
+        }
+    } else if (command == "L" &amp;&amp; fields.length == 4) {
+        let color = toColor(fields[1], fields[2], fields[3])
+        for (let i = 0; i &lt; PIXEL_COUNT; i++) {
+            pixelColors[i] = color
+        }
+        renderPixels()
+    } else if (command == "P" &amp;&amp; fields.length == 5) {
+        let index = parseInt(fields[1])
+        if (index &gt;= 0 &amp;&amp; index &lt; PIXEL_COUNT) {
+            pixelColors[index] = toColor(fields[2], fields[3], fields[4])
+            renderPixels()
+        }
+    } else if (command == "B" &amp;&amp; fields.length == 2) {
+        strip.setBrightness(clampNumber(parseInt(fields[1]), 0, 255))
+        renderPixels()
+    } else if (command == "R") {
+        for (let i = 0; i &lt; PIXEL_COUNT; i++) {
+            pixelColors[i] = neopixel.hsl(i * 360 / PIXEL_COUNT, 100, 50)
+        }
+        renderPixels()
+    } else if (command == "T") {
+        let last = pixelColors.pop()
+        pixelColors.unshift(last)
+        renderPixels()
+    }
+}
+function sendSensors() {
+    // 초음파: sonar 확장(sonar.ping)과 같은 순서로 잽니다. (2026-10-19 실물에서 sonar 방식만 거리가 나와 맞춤)
+    pins.setPull(DigitalPin.P14, PinPullMode.PullNone)
+    pins.digitalWritePin(DigitalPin.P14, 0)
+    control.waitMicros(2)
+    pins.digitalWritePin(DigitalPin.P14, 1)
+    control.waitMicros(10)
+    pins.digitalWritePin(DigitalPin.P14, 0)
+    let pulse = pins.pulseIn(DigitalPin.P13, PulseValue.High, 500 * 58)
+    let cm = Math.round(pulse / 58)
+    let distance = pulse &gt; 0 &amp;&amp; cm &gt;= 2 &amp;&amp; cm &lt;= 400 ? cm : -1
+    let ax = input.acceleration(Dimension.X)
+    let ay = input.acceleration(Dimension.Y)
+    let az = input.acceleration(Dimension.Z)
+    let motion = Math.round(Math.abs(Math.sqrt(ax * ax + ay * ay + az * az) - 1024))
+    let brightness = input.lightLevel()
+    let temperature = input.temperature()
+    let buttonA = input.buttonIsPressed(Button.A) ? 1 : 0
+    let buttonB = input.buttonIsPressed(Button.B) ? 1 : 0
+    let pitch = input.rotation(Rotation.Pitch)
+    let roll = input.rotation(Rotation.Roll)
+    serial.writeLine("D," + distance + "," + motion + "," + brightness + "," + temperature + "," + buttonA + "," + buttonB + "," + pitch + "," + roll)
+}
+// 명령은 0.02초마다 확인하고, 센서 데이터는 0.2초마다 보냅니다.
+// 받는 곳의 기본 크기가 작아서, 명령을 자주 꺼내 와야 넘치지 않습니다.
+let lastSend = 0
+basic.forever(function () {
+    readCommands()
+    if (input.runningTime() - lastSend &gt;= 200) {
+        lastSend = input.runningTime()
+        sendSensors()
+    }
+    basic.pause(20)
+})
+basic.showIcon(IconNames.Yes)
+</code></pre>
+    </details>
   </section>
 </div>
 
@@ -1238,7 +1510,7 @@ $('reflCopy').addEventListener('click', async () => {
 });
 
 /* 단계 이동 */
-const STEPS = 6;
+const STEPS = 7;
 let curStep = 1;
 function stepDone(n) {
   if (n === '1') return filled().length === P.fields.length;
@@ -1265,13 +1537,15 @@ function goStep(n) {
   if (curStep === 6) { fillChips(); renderRefl(); }
   if (curStep !== 5 && talkTimer) stopTalk();
   history.replaceState(null, '', '#step' + curStep);
-  updateStepper(); window.scrollTo({top: 0});
+  updateStepper();
+  document.querySelector('[data-step-go="' + curStep + '"]')?.scrollIntoView({block: 'nearest', inline: 'center'});
+  window.scrollTo({top: 0});
 }
 document.querySelectorAll('[data-step-go]').forEach(b => b.addEventListener('click', () => goStep(Number(b.dataset.stepGo))));
 $('prevStep').addEventListener('click', () => goStep(curStep - 1));
 $('nextStep').addEventListener('click', () => goStep(curStep + 1));
 renderChecks(); renderChecklist(); renderStars(); renderChecklist.ready = true;
-goStep(Number((location.hash.match(/^#step([1-6])$/) || [0, 1])[1]));
+goStep(Number((location.hash.match(/^#step([1-7])$/) || [0, 1])[1]));
 </script>
 <script>
 /* 수업 페이지 공통: 구역의 제목·설명·내용이 화면에 들어올 때 차례로 나타납니다. 스크립트가 없으면 처음부터 다 보입니다. */

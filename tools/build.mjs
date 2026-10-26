@@ -126,7 +126,13 @@ function inlineImages(page) {
 }
 
 for (const [src, dst] of PAGES) {
-  const page = embedLantern(inlineImages(embedLesson(embedPrompt(embedFirmware(fs.readFileSync(path.join(root, src), 'utf8').replace(/\r\n/g, '\n'))))));
+  let source = fs.readFileSync(path.join(root, src), 'utf8').replace(/\r\n/g, '\n');
+  if (source.includes('<!-- CODELESSON -->')) {
+    const escapedCode = fs.readFileSync(firmwarePath,'utf8').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    const lesson = fs.readFileSync(path.join(root,'tools','code-lesson.html'),'utf8').replace('<!-- CODE:FULL -->', () => escapedCode);
+    source = source.replace('<!-- CODELESSON -->', () => lesson);
+  }
+  const page = embedLantern(inlineImages(embedLesson(embedPrompt(embedFirmware(source)))));
   fs.writeFileSync(path.join(root, dst), page);
   console.log(`${dst} 완성: ${(page.length / 1024).toFixed(0)}KB`);
 }
