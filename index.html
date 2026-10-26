@@ -132,7 +132,8 @@
   .cover .cv-device{overflow:hidden}
   /* 휴대폰 */
   @media (max-width:760px){
-    .cv-nav ul{display:none}
+    .cv-nav{flex-direction:column;align-items:flex-start;gap:12px}
+    .cv-nav ul{display:flex;flex-wrap:wrap;gap:8px 20px}
     .cv-sentence{font-size:13.5vw;line-height:1}
     .cv-sentence{grid-template-columns:1fr}
     .cv-l1{grid-row:1}
@@ -669,6 +670,7 @@ dialog,dialog.present{border-radius:20px}
       <span class="cv-word">마이크로비트 웹앱 연결 실험실</span>
       <ul>
         <li><button type="button" data-go="1">작품 보기</button></li>
+        <li><a href="assessment.html">수행평가 과정 보기</a></li>
         <li><button type="button" data-go="2">연결하기</button></li>
         <li><button type="button" data-href="practice.html">활동지 실습</button></li>
         <li><a href="wiring.html">배선 연습</a></li>
@@ -727,7 +729,7 @@ dialog,dialog.present{border-radius:20px}
 
   <footer class="cv-close">
     <p class="cv-name" data-rise>마이크로비트 웹앱 연결 실험실</p>
-    <div class="cv-small"><span>사진: Les Pounder (<a href="https://commons.wikimedia.org/w/index.php?curid=67257007">원본</a>, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC BY-SA 2.0</a>), SimonWaldherr (<a href="https://commons.wikimedia.org/wiki/File:BBC_micro_bit_v2.jpg">원본</a>, <a href="https://creativecommons.org/licenses/by/4.0">CC BY 4.0</a>). 두 사진은 잘라서 썼어요.</span><span class="cv-links"><a href="wiring.html">배선 따로 연습하기</a> · <a href="assessment.html">수행평가 과정 보기</a></span></div>
+    <div class="cv-small"><span>사진: Les Pounder (<a href="https://commons.wikimedia.org/w/index.php?curid=67257007">원본</a>, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC BY-SA 2.0</a>), SimonWaldherr (<a href="https://commons.wikimedia.org/wiki/File:BBC_micro_bit_v2.jpg">원본</a>, <a href="https://creativecommons.org/licenses/by/4.0">CC BY 4.0</a>). 두 사진은 잘라서 썼어요.</span><span class="cv-links"><a href="wiring.html">배선 따로 연습하기</a></span></div>
   </footer>
 </div>
 <header class="top"><div class="wrap">
