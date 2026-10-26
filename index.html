@@ -352,7 +352,7 @@ header.top .wrap{padding-top:20px;padding-bottom:8px}
 /* 단계 머리 */
 .stage-head,.head{padding:72px 0 8px}
 .stage-head h1,.head h1{font-size:var(--s-h1);font-weight:650;line-height:1.02;letter-spacing:-.04em;margin:0 0 20px;max-width:16em}
-.stage-head p,.head p{font-size:var(--s-lead);line-height:1.45;color:var(--ink);max-width:34em}
+.stage-head p,.head p{font-size:var(--s-lead);line-height:1.45;color:var(--ink);max-width:none}
 .head .tags span{background:var(--surface-2);border-radius:var(--r);font-size:var(--s-small)}
 
 /* 구역: 상자 대신 여백. 안쪽 판만 톤으로 구분 */
@@ -364,7 +364,7 @@ header.top .wrap{padding-top:20px;padding-bottom:8px}
 .card-num{background:none;color:var(--muted);padding:0;border-radius:var(--r);font-size:var(--s-h2);font-weight:400;letter-spacing:-.03em;line-height:1.05}
 .card-num.danger,.alert-card .card-num{color:#fff;opacity:.75}
 .card h2,.sec-head h2{font-size:var(--s-h2);font-weight:650;letter-spacing:-.035em;line-height:1.05;margin:0}
-.card .lead{font-size:var(--s-lead);color:var(--ink);line-height:1.45;max-width:36em;margin:0 0 32px}
+.card .lead{font-size:var(--s-lead);color:var(--ink);line-height:1.45;max-width:none;margin:0 0 32px}
 .sec-head{margin-bottom:24px;align-items:baseline}
 .sec-head span{font-size:var(--s-small);color:var(--muted)}
 
@@ -456,7 +456,8 @@ body > footer{border:0;font-size:var(--s-small);color:var(--muted);text-align:le
 .tile.on{background:var(--signal)}
 .tester-box{border:0;border-radius:var(--r);background:var(--card)}
 .status{border-radius:var(--r)}
-.card p,.flow-detail p{max-width:68ch}
+/* 설명은 각 카드/열의 가용 너비를 사용한다. 좁은 화면에서는 자연스럽게 줄바꿈한다. */
+.card p,.flow-detail p{max-width:none}
 .tbl{table-layout:auto}
 @media (max-width:900px){.wiring,.why{grid-template-columns:1fr}}
 @media (max-width:760px){.photos{grid-template-columns:1fr}.photos figure img{height:auto}.story{grid-template-columns:1fr 1fr;gap:24px}}
