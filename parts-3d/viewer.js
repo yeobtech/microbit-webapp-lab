@@ -28,7 +28,7 @@ function select(item){
  if(!renderer)stage.querySelector('img').src='./previews/'+id+'.png';reset();
 }
 for(const [i,item] of catalog.entries()){
- if(i===0||i===9){const h=document.createElement('h3');h.textContent=i===0?'센서 · 입력 부품':'출력 부품';grid.append(h)}
+ if(i===0||i===1||i===10){const h=document.createElement('h3');h.textContent=i===0?'메인보드':i===1?'센서 · 입력 부품':'출력 부품';grid.append(h)}
  const b=document.createElement('button');b.dataset.id=item[0];const img=document.createElement('img');img.src='./previews/'+item[0]+'.png';img.alt='';const name=document.createElement('span');name.textContent=item[1];b.append(img,name);grid.append(b);b.onclick=()=>select(item);
 }
 document.querySelector('#reset').onclick=reset;

@@ -5,6 +5,18 @@ const pin=(label,role,detail,x,y,z)=>({label,role,detail,x,y,z});
 const header=(z,labels)=>labels.map(([name,role,detail],i)=>pin(name,role,detail,(i-(labels.length-1)/2)*2.54,6.4,z));
 const v=['VCC','v','전원 +'],g=['GND','g','공통 접지'];
 export const pins={
+ s3pro:[
+  {...pin('USB PROG','c','위쪽 USB-C · 프로그램 업로드',-36.5,3.4,-15),end:[-48,8,-20]},
+  {...pin('OTG','c','아래쪽 USB-C · USB 기능 / IO19·20 공유',-36.5,3.4,-3.5),end:[-48,8,-7]},
+  {...pin('DC IN','v','원형 잭 · DC 7–12V 입력',-37,5.4,17),end:[-48,8,21]},
+  {...pin('S','s','노란 줄 · GPIO 12, 13, 11, 10, 48, 47 / 42, 41, 40, 38, 21, 20',21.64,7.55,-17),end:[45,8,-23]},
+  {...pin('V','v','빨간 줄 · 보드의 V 전원 레일',21.64,7.55,-14.46),end:[45,8,-14]},
+  {...pin('GND','g','검은 줄 · G · 공통 접지',21.64,7.55,-11.92),end:[45,8,-5]},
+  {...pin('SCL','s','I²C BUS 맨 위 흰 줄 · 클록',-9,7.55,1),end:[-48,8,2]},
+  {...pin('SDA','s','I²C BUS 두 번째 노란 줄 · 데이터',-9,7.55,3.54),end:[-48,8,11]},
+  {...pin('3V3','v','ANALOG 빨간 줄 · 3.3V 전원',-6.46,7.55,20.62),end:[-8,8,35]},
+  {...pin('ANALOG','s','ANALOG 노란 줄 · IO19, IO14, IO3, IO2 · 옆 검은 줄은 GND',-3.92,7.55,20.62),end:[12,8,35]}
+ ],
  dht22:header(16.7,[v,['DATA','s','온습도 데이터'],['NC','n','연결하지 않음'],g]).map(p=>({...p,y:1.6})),
  'hc-sr04':header(8,[v,['Trig','s','보드 → 센서 · 측정 시작'],['Echo','s','센서 → 보드 · 반사 시간'],g]),
  ldr:[pin('A','c','광저항 한쪽 다리',-2,-1,15),pin('B','c','다른 다리 · 극성 없음',2,-1,15)],
@@ -22,6 +34,7 @@ export const pins={
  fan:[pin('GND','g','검은 선',19.35,0,29),pin('VCC','v','빨간 선 · 팬 정격 전원',20.65,0,29)]
 };
 export const notes={
+ s3pro:'I²C BUS는 위에서 SCL·SDA·V·G 순서예요. ANALOG는 왼쪽부터 G·3V3·S예요. V와 3V3는 구분해서 연결하세요. GPIO 신호는 3.3V 기준이며, IO19·20은 USB OTG와 공유돼요. 크기와 외형은 사진 기반 근사 모델입니다.',
  'hc-sr04':'일반 5V형의 Echo를 3.3V 입력으로 받을 때는 분압이나 레벨 변환이 필요해요.',
  ldr:'두 다리에는 극성이 없어요. 저항과 짝지어 만든 분압점에서 밝기를 읽어요.',
  soil:'이 부품은 두 전극만 있는 탐침이에요. 전원과 신호 단자는 별도 측정 모듈에 있어요.',
@@ -34,7 +47,7 @@ export const notes={
 export function pinDescription(p){return names[p.role]+' · '+p.detail}
 export function addPinLabels(group,id){
  const size=new T.Box3().setFromObject(group),extent=size.getSize(new T.Vector3());
- const unit=Math.max(extent.x,extent.y,extent.z)*.18;
+ const unit=id==='s3pro'?10:Math.max(extent.x,extent.y,extent.z)*.18;
  const marks=new T.Group();marks.name='Terminal labels';group.add(marks);
  const list=pins[id];
  list.forEach((p,i)=>{
@@ -43,6 +56,7 @@ export function addPinLabels(group,id){
   const row=id==='button'?2:list.length;
   const end=new T.Vector3((i%row-(row-1)/2)*unit*1.28,p.y+unit*.35,rear?size.min.z-unit*1.1:size.max.z+unit*1.1);
   if(id==='neopixel'){end.x=p.x+(p.x<0?-1:1)*unit*1.15;end.z=(i%3-1)*unit*.76}
+  if(p.end)end.set(...p.end);
   const color=colors[p.role],mat=new T.MeshBasicMaterial({color});
   const dir=end.clone().sub(at);
   const line=new T.Mesh(new T.CylinderGeometry(unit*.024,unit*.024,dir.length(),8),mat);line.position.copy(at).lerp(end,.5);line.quaternion.setFromUnitVectors(new T.Vector3(0,1,0),dir.normalize());

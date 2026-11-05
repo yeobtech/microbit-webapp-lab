@@ -16,5 +16,5 @@ const browser=await chromium.launch({channel:'msedge',headless:true});try{
  await page.goto(pathToFileURL(path.join(dir,'index.html')).href);await page.addScriptTag({content:exporter.outputFiles[0].text});await page.evaluate(()=>window.exportParts());
  await page.addStyleTag({content:'#stage{width:350px;height:240px}'});for(const button of await page.locator('#grid button').all()){
  const id=await button.getAttribute('data-id');await button.click();await page.locator('#stage canvas').screenshot({path:path.join(dir,'previews',id+'.png')});
- }console.log('Exported 15 GLB files and previews.');
+ }console.log('Exported all GLB files and previews.');
 }finally{await browser.close()}

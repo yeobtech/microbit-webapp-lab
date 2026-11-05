@@ -1,8 +1,10 @@
+import {createS3Pro} from './s3pro.js';
 import {addPinLabels} from './pins.js';
 import * as T from 'three';
 import {RoundedBoxGeometry} from 'three/addons/geometries/RoundedBoxGeometry.js';
 const metal=0xbac4cc, gold=0xdab26a, black=0x202530, blue=0x174e80, white=0xf1eee3, green=0x176447;
 export const catalog=[
+ ['s3pro','S3 Pro 메인보드','Keyestudio ESP32-S3 Pro · KS5034','사진의 메인보드예요. 노란 S는 신호, 빨간 V는 전원, 검은 G는 접지예요.'],
  ['dht22','온습도 센서','DHT22','흰 격자 덮개 속으로 공기가 드나들어요.'],
  ['hc-sr04','초음파 거리 센서','HC-SR04','두 금속 통 중 하나는 초음파를 보내고 다른 하나는 메아리를 받아요.'],
  ['ldr','조도 센서','원판형 광저항','작은 원판 위에 구불구불한 감광 무늬가 있어요.'],
@@ -20,7 +22,7 @@ export const catalog=[
  ['fan','팬모터','사각 축류팬','사각 틀 안에 굽은 날개와 중심 모터가 있어요.']
 ];
 export function createPart(id){
- const g=new T.Group(); g.name=id;
+ const g=id==='s3pro'?createS3Pro():new T.Group(); g.name=id;
  const mats=new Map();
  function mesh(geo,color,x,y,z){
   if(!mats.has(color)) mats.set(color,new T.MeshStandardMaterial({color,metalness:[metal,gold].includes(color)?.58:.06,roughness:.42}));
