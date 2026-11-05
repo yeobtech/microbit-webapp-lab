@@ -24,6 +24,8 @@ function select(item){
  const list=document.querySelector('#pins');list.replaceChildren();
  for(const p of pins[id]){const li=document.createElement('li'),b=document.createElement('b');b.dataset.role=p.role;b.textContent=p.label;li.append(b,' '+pinDescription(p));list.append(li)}
  document.querySelector('#pinNote').textContent=notes[id]||'';
+ document.querySelector('#topView').hidden=id!=='s3pro';
+ document.querySelector('#gpioMap').hidden=id!=='s3pro';
  document.querySelector('#download').href='./models/'+id+'.glb';for(const b of grid.querySelectorAll('button'))b.setAttribute('aria-pressed',String(b.dataset.id===id));
  if(!renderer)stage.querySelector('img').src='./previews/'+id+'.png';reset();
 }
@@ -34,3 +36,28 @@ for(const [i,item] of catalog.entries()){
 document.querySelector('#reset').onclick=reset;
 new ResizeObserver(()=>{if(renderer){renderer.setSize(stage.clientWidth,stage.clientHeight,false);reset()}}).observe(stage);
 select(catalog[0]);
+
+document.querySelector('#topView').onclick=()=>{
+ if(!renderer)return;
+ reset();
+ const distance=camera.position.distanceTo(controls.target)*.6;
+ camera.position.copy(controls.target).add(new T.Vector3(0,distance,.000001));
+ controls.update();draw();
+};
+const gpioRows=[
+ ['디지털 S 줄 · 왼쪽 → 오른쪽','12 · 13 · 11 · 10 · 48 · 47 / 42 · 41 · 40 · 38 · 21 · 20'],
+ ['ANALOG · 위 → 아래','19 · 14 · 3 · 2'],
+ ['왼쪽 파란 줄 · 위쪽','6 · 4 · 5'],
+ ['왼쪽 파란 줄 · 아래쪽','15 · 16 · 7'],
+ ['I²C BUS / SDA·SCL 소켓','SDA = GPIO8 · SCL = GPIO9'],
+ ['오른쪽 가로 소켓 · G·V 다음','20 · 21 · 38 · 40 · 41 · 42'],
+ ['아래쪽 ANALOG 소켓 · 왼쪽 → 오른쪽','2 · 3 · 14 · 19 · 8(SDA) · 9(SCL)'],
+ ['보드 내장 기능','GPIO45 RGB · GPIO1 전류 감지 · GPIO0 BOOT'],
+ ['뒷면 SD 카드','GPIO39 CS · GPIO35 MOSI · GPIO37 CLK · GPIO36 MISO'],
+ ['USB OTG와 공유','GPIO19 D− · GPIO20 D+'],
+ ['TX / RX 소켓','실물의 TX·RX 표기를 유지했어요. 연결된 GPIO 번호는 회로도 확인이 필요해요.']
+];
+const table=document.createElement('table');
+const caption=document.createElement('caption');caption.textContent='S3 Pro GPIO 번호표 · IO12는 GPIO12와 같은 뜻이에요';table.append(caption);
+for(const row of gpioRows){const tr=document.createElement('tr');row.forEach((text,i)=>{const cell=document.createElement(i===0?'th':'td');cell.textContent=text;tr.append(cell)});table.append(tr)}
+document.querySelector('#gpioMap').append(table);

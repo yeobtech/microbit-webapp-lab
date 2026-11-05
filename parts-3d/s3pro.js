@@ -14,11 +14,13 @@ export function createS3Pro(){
  function box(x,y,z,w,h,d,c,r=0){return mesh(r?new RoundedBoxGeometry(w,h,d,2,r):new T.BoxGeometry(w,h,d),c,x,y,z)}
  function cylinder(x,y,z,r,h,c){return mesh(new T.CylinderGeometry(r,r,h,28),c,x,y,z)}
  function text(label,x,z,w,h=1.5,y=1.66,color='#d4c677'){
-  const canvas=document.createElement('canvas');canvas.width=512;canvas.height=80;
-  const ctx=canvas.getContext('2d');ctx.fillStyle=color;ctx.font='bold 48px Arial';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(label,256,40,500);
+  const canvas=document.createElement('canvas');canvas.height=80;
+  const measure=canvas.getContext('2d');measure.font='bold 48px Arial';canvas.width=Math.ceil(measure.measureText(label).width)+16;
+  const ctx=canvas.getContext('2d');ctx.fillStyle=color;ctx.font='bold 48px Arial';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(label,canvas.width/2,40,canvas.width-12);
   const map=new T.CanvasTexture(canvas);map.colorSpace=T.SRGBColorSpace;
   const m=new T.Mesh(new T.PlaneGeometry(w,h),new T.MeshBasicMaterial({map,transparent:true,side:T.DoubleSide,depthWrite:false}));
   m.rotation.x=-Math.PI/2;m.position.set(x,y,z);board.add(m);m.name=label;
+  if(/^IO[0-9]+$/.test(label))m.userData.gpio=Number(label.slice(2));
  }
  const outline=new T.Shape([[-34.5,-27],[31,-27],[34.5,-23],[34.5,23],[31,27],[-34.5,27]].map(([x,z])=>new T.Vector2(x,-z)));outline.closePath();
  for(const [x,z] of [[-19,-24],[31,-13],[31,21],[-19,24]]){
@@ -34,7 +36,7 @@ export function createS3Pro(){
    const px=x+(alongZ?0:d),pz=z+(alongZ?d:0);
    box(px,8.43,pz,1.25,.1,1.25,0x5c451c);
    box(px,8.5,pz,.68,.11,.68,black);
-   if(label)text(label,px,pz+(alongZ?0:2.8),2.35,.95,alongZ?8.55:1.67);
+   if(label)text(label,px,pz+(z>20?-2.7:2.8),2.35,1.25,8.65);
   });
  }
  function pin(x,z,c){
@@ -42,16 +44,16 @@ export function createS3Pro(){
   box(x,-.65,z,.62,1.4,.62,silver);
  }
  // Arduino-shaped outer female sockets, in the orientation of the photograph.
- socket(-5.5,-24,['SCL','SDA','V','G','12','13','11','10','48','47']);
- socket(20.1,-24,['42','41','40','38','21','20','TX','RX']);
+ socket(-5.5,-24,['IO9','IO8','V','G','IO12','IO13','IO11','IO10','IO48','IO47']);
+ socket(20.1,-24,['IO42','IO41','IO40','IO38','IO21','IO20','TX','RX']);
  socket(3.5,24,['NC','V','RST','3V3','V','G','G','VIN']);
- socket(23,24,['2','3','14','19','SDA','SCL']);
- socket(22,-7,['G','V','20','21','38','40','41','42']);
+ socket(23,24,['IO2','IO3','IO14','IO19','IO8','IO9']);
+ socket(22,-7,['G','V','IO20','IO21','IO38','IO40','IO41','IO42']);
  const digital=[12,13,11,10,48,47,42,41,40,38,21,20];
  digital.forEach((number,i)=>{
   const x=-8+i*2.54+(i>=6?1.7:0);
   [-17,-14.46,-11.92].forEach((z,j)=>pin(x,z,[yellow,red,black][j]));
-  text(String(number),x,-19.1,2.1,1.1);
+  text('IO'+number,x,-19.5,2.35,1.3,8.65);
  });
  ['S','V','G'].forEach((label,i)=>text(label,-11.1,-17+i*2.54,1.4,1.5));
  socket(29.4,-14.5,['','',''],true);
@@ -63,15 +65,15 @@ export function createS3Pro(){
  function white(){return 0xe4e0cf}
  text('I2C BUS',-5.5,-1.4,10,1.7);
  socket(.2,4.8,['','','',''],true);
- ['SCL','SDA','V','G'].forEach((name,i)=>text(name,3.2,1+i*2.54,2.8,1.05));
+ ['SCL IO9','SDA IO8','V','G'].forEach((name,i)=>text(name,4,1+i*2.54,5,1.35,8.65));
  [19,14,3,2].forEach((number,i)=>{
   const z=13+i*2.54;[black,red,yellow].forEach((c,j)=>pin(-9+j*2.54,z,c));
-  text(String(number),-.8,z,2.3,1.2);
+  text('IO'+number,-.5,z,3.8,1.5,8.65);
  });
  text('G 3V3 S',-6.5,22,7.5,1.1);
  // Side expansion rows, blue in the supplied board.
- for(const [start,labels] of [[.5,['G','3V3','6','4','5']],[14,['G','3V3','15','16','7']]]){
-  labels.forEach((label,i)=>{pin(-15,start+i*1.9,0x246c9b);text(label,-18,start+i*1.9,2.4,1)});
+ for(const [start,labels] of [[.5,['G','3V3','IO6','IO4','IO5']],[14,['G','3V3','IO15','IO16','IO7']]]){
+  labels.forEach((label,i)=>{pin(-15,start+i*1.9,0x246c9b);text(label,-18,start+i*1.9,3,1.4,8.65)});
  }
  // ESP32-S3-WROOM module and antenna.
  box(22,2.3,8.4,19.5,1.3,23,0x31413c,.3);
