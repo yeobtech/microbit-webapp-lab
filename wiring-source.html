@@ -163,8 +163,8 @@
 </head>
 <body>
 <header class="top"><div class="wrap">
-  <div class="brand">마이크로비트 웹앱 연결 실험실<small>2-1 준비물과 배선 · 따로 연습하기</small></div>
-  <a class="back" href="index.html#stage2">← 2단계로 돌아가기</a>
+  <div class="brand">마이크로비트 웹앱 연결 실험실<small>2단계 배선 연습 · 사진 위에서 먼저 연결해요</small></div>
+  <a class="back" href="index.html#stage1">← 1단계 작품 보기</a>
 </div></header>
 
 <nav class="stepper" aria-label="배선 연습 순서"><div class="wrap"><ol>
@@ -831,8 +831,8 @@ function updateStepper() {
     if (b.dataset.stepGo === String(curStep)) b.setAttribute('aria-current', 'step'); else b.removeAttribute('aria-current');
     b.classList.toggle('done', passed.has(b.dataset.stepGo) || (b.dataset.stepGo === '5' && st.passed.size > 0));
   });
-  $('prevStep').disabled = curStep === 1;
-  $('nextStep').disabled = curStep === 5;
+  $('prevStep').textContent = curStep === 1 ? '← 1단계 작품 보기' : '← 이전';
+  $('nextStep').textContent = curStep === 5 ? '3단계 연결하기 →' : '다음 →';
 }
 function goStep(n) {
   curStep = Math.max(1, Math.min(5, n));
@@ -843,8 +843,8 @@ function goStep(n) {
   if (curStep === 5) requestAnimationFrame(drawWires);
 }
 document.querySelectorAll('[data-step-go]').forEach(b => b.addEventListener('click', () => goStep(Number(b.dataset.stepGo))));
-$('prevStep').addEventListener('click', () => goStep(curStep - 1));
-$('nextStep').addEventListener('click', () => goStep(curStep + 1));
+$('prevStep').addEventListener('click', () => { if (curStep === 1) location.href = 'index.html#stage1'; else goStep(curStep - 1); });
+$('nextStep').addEventListener('click', () => { if (curStep === 5) location.href = 'index.html#stage2'; else goStep(curStep + 1); });
 $('verifyBtn').addEventListener('click', updateStepper);
 goStep(Number((location.hash.match(/^#step([1-5])$/) || [0, 1])[1]));
 </script>

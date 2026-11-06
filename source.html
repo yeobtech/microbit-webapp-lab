@@ -78,7 +78,7 @@
   .cv-shots{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:12px 0 0}
   .cv-shots figure{margin:0}
   .cv-shots img{width:100%;aspect-ratio:1/1;object-fit:cover;object-position:top;display:block;background:var(--c-surface)}
-  /* 세 단계 막대 */
+  /* 네 단계 막대 */
   .cv-stages{padding:160px var(--m) 0}
   .cv-bar{display:flex;gap:6px;margin-top:64px;height:22vh;min-height:150px}
   .cv-seg{flex:var(--g) 1 12%;min-width:0;display:flex;flex-direction:column;justify-content:space-between;align-items:flex-start;padding:20px;border:0;border-radius:0;text-align:left;cursor:pointer;background:var(--bg-seg);color:var(--ink-seg)!important;transition:transform .15s var(--ease-out),filter .2s}
@@ -86,8 +86,9 @@
   .cv-seg strong{font-size:var(--s-lead);font-weight:700;line-height:1.2}
   .cv-seg[data-c="signal"]{--bg-seg:var(--c-signal);--ink-seg:var(--c-signal-ink)}
   .cv-seg[data-c="power"]{--bg-seg:var(--c-power);--ink-seg:var(--c-power-ink)}
+  .cv-seg[data-c="wire"]{--bg-seg:#2f6fde;--ink-seg:#ffffff}
   .cv-seg[data-c="bone"]{--bg-seg:var(--c-bone);--ink-seg:var(--c-bone-ink)}
-  .cv-clauses{display:flex;gap:6px;margin:16px 0 0;padding:0;list-style:none}
+  .cv-clauses{display:flex;gap:10px;margin:16px 0 0;padding:0;list-style:none}
   .cv-clauses li{flex:var(--g) 1 12%;min-width:0;font-size:17px;line-height:1.45;padding-right:12px}
   .cv-clauses li span{display:block;max-width:22ch}
   /* 맺음 */
@@ -319,9 +320,9 @@
       <ul>
         <li><button type="button" data-go="1">작품 보기</button></li>
         <li><a href="assessment.html">수행평가 과정 보기</a></li>
+        <li><button type="button" data-href="wiring.html">배선 연습</button></li>
         <li><button type="button" data-go="2">연결하기</button></li>
         <li><button type="button" data-href="practice.html">활동지 실습</button></li>
-        <li><a href="wiring.html">배선 연습</a></li>
       </ul>
     </nav>
     <h1 class="cv-sentence" id="coverTitle">
@@ -362,15 +363,17 @@
   </section>
 
   <section class="cv-stages" aria-labelledby="cvStagesTitle">
-    <h2 id="cvStagesTitle" data-rise>세 단계로 만들어요</h2>
+    <h2 id="cvStagesTitle" data-rise>네 단계로 만들어요</h2>
     <div class="cv-bar" role="list">
       <button type="button" class="cv-seg" role="listitem" data-c="signal" style="--g:10" data-go="1" data-rise><b>약 10분</b><strong>작품 보기</strong><span class="cv-m">먼저, 선생님 작품을 보고 체험판을 움직여 봐요.</span></button>
-      <button type="button" class="cv-seg" role="listitem" data-c="power" style="--g:20;--i:1" data-go="2" data-rise><b>약 20분</b><strong>연결하기</strong><span class="cv-m">다음으로, 공통 코드를 넣고 웹앱과 연결해요.</span></button>
-      <button type="button" class="cv-seg" role="listitem" data-c="bone" style="--g:90;--i:2" data-href="practice.html" data-rise><b>두 차시</b><strong>활동지 실습</strong><span class="cv-m">마지막으로, 활동지대로 내 웹앱을 만들고 조원과 나눠요.</span></button>
+      <button type="button" class="cv-seg" role="listitem" data-c="wire" style="--g:15;--i:1" data-href="wiring.html" data-rise><b>약 15분</b><strong>배선 연습</strong><span class="cv-m">그다음, 사진 위에서 선을 먼저 연결해 봐요.</span></button>
+      <button type="button" class="cv-seg" role="listitem" data-c="power" style="--g:20;--i:2" data-go="2" data-rise><b>약 20분</b><strong>연결하기</strong><span class="cv-m">이어서, 공통 코드를 넣고 웹앱과 연결해요.</span></button>
+      <button type="button" class="cv-seg" role="listitem" data-c="bone" style="--g:90;--i:3" data-href="practice.html" data-rise><b>두 차시</b><strong>활동지 실습</strong><span class="cv-m">마지막으로, 활동지대로 내 웹앱을 만들고 조원과 나눠요.</span></button>
     </div>
     <ul class="cv-clauses" aria-hidden="true">
       <li style="--g:10"><span>먼저, 선생님 작품을 보고 체험판을 움직여 봐요.</span></li>
-      <li style="--g:20"><span>다음으로, 공통 코드를 넣고 웹앱과 연결해요.</span></li>
+      <li style="--g:15"><span>그다음, 사진 위에서 선을 먼저 연결해 봐요.</span></li>
+      <li style="--g:20"><span>이어서, 공통 코드를 넣고 웹앱과 연결해요.</span></li>
       <li style="--g:90"><span>마지막으로, 활동지대로 내 웹앱을 만들고 조원과 나눠요.</span></li>
     </ul>
   </section>
@@ -386,8 +389,9 @@
 
 <nav class="stepper" aria-label="수업 단계"><div class="wrap"><ol>
   <li><button type="button" data-go="1" aria-current="step"><span class="num">1</span><span class="label">작품 보기<small>우리가 만든 결과물</small></span></button></li>
-  <li><button type="button" data-go="2"><span class="num">2</span><span class="label">연결하기<small>마이크로비트 준비와 연결</small></span></button></li>
-  <li><button type="button" data-href="practice.html"><span class="num">3</span><span class="label">활동지 실습<small>내 웹앱 만들기 · 새 페이지</small></span></button></li>
+  <li><button type="button" data-href="wiring.html"><span class="num">2</span><span class="label">배선 연습<small>사진 위에서 선 연결 · 새 페이지</small></span></button></li>
+  <li><button type="button" data-go="2"><span class="num">3</span><span class="label">연결하기<small>마이크로비트 준비와 연결</small></span></button></li>
+  <li><button type="button" data-href="practice.html"><span class="num">4</span><span class="label">활동지 실습<small>내 웹앱 만들기 · 새 페이지</small></span></button></li>
 </ol></div></nav>
 
 <main class="wrap">
@@ -510,7 +514,7 @@ R          무지개색   T  한 칸 돌리기</pre></article>
 
   <div class="next">
     <span class="soon">다음 단계: 마이크로비트와 연결하는 방법</span>
-    <button type="button" data-go="2">2단계로 →</button>
+    <button type="button" data-href="wiring.html">2단계 배선 연습 →</button>
   </div>
 </div>
 
@@ -522,10 +526,10 @@ R          무지개색   T  한 칸 돌리기</pre></article>
 
   <!-- 2-1 -->
   <section class="card" aria-labelledby="c21">
-    <div class="card-head"><span class="card-num">2-1</span><h2 id="c21">준비물과 배선</h2></div>
+    <div class="card-head"><span class="card-num">3-1</span><h2 id="c21">준비물과 배선</h2></div>
     <p class="lead">전원을 끈 상태에서 연결하세요. 핀 이름은 색보다 글자를 보고 확인합니다.</p>
     <a class="practice-link" href="wiring.html">
-      <span><b>배선 연습 페이지 열기</b><small>실물 사진 위에서 초음파센서·서보모터·네오픽셀 선 10개를 먼저 연결해 봅니다.</small></span>
+      <span><b>2단계 배선 연습 다시 보기</b><small>헷갈리면 실물 사진 위에서 초음파센서·서보모터·네오픽셀 선 10개를 다시 연결해 봐요.</small></span>
       <span aria-hidden="true">→</span>
     </a>
     <div class="wiring">
@@ -560,7 +564,7 @@ R          무지개색   T  한 칸 돌리기</pre></article>
 
   <!-- 2-2 -->
   <section class="card" aria-labelledby="c22">
-    <div class="card-head"><span class="card-num">2-2</span><h2 id="c22">공통 코드 넣기 (메이크코드)</h2></div>
+    <div class="card-head"><span class="card-num">3-2</span><h2 id="c22">공통 코드 넣기 (메이크코드)</h2></div>
     <p class="lead">모든 친구의 마이크로비트에 똑같은 코드를 넣습니다. 이 코드는 센서값을 보내고, 받은 명령대로 움직이기만 합니다.</p>
     <ol class="steps">
       <li><div class="step-text"><b>새 프로젝트 만들기</b><p><a href="https://makecode.microbit.org" target="_blank" rel="noopener">makecode.microbit.org</a>에 들어가서 <b>새 프로젝트</b>를 누르고 이름을 정합니다.</p></div><img src="images/mk-1-new.webp" alt="메이크코드 첫 화면. 새 프로젝트 카드에 주황 테두리"></li>
@@ -575,7 +579,7 @@ R          무지개색   T  한 칸 돌리기</pre></article>
 
   <!-- 2-3 -->
   <section class="card alert-card" aria-labelledby="c23">
-    <div class="card-head"><span class="card-num danger">2-3</span><h2 id="c23">꼭! 메이크코드 탭 닫기</h2></div>
+    <div class="card-head"><span class="card-num danger">3-3</span><h2 id="c23">꼭! 메이크코드 탭 닫기</h2></div>
     <p class="lead">다운로드가 끝나면 메이크코드 탭을 닫으세요. 이 단계를 빼먹으면 숫자가 깨집니다.</p>
     <div class="why">
       <svg viewBox="0 0 560 200" role="img" aria-label="마이크로비트가 보낸 글자를 메이크코드 탭과 웹앱이 나눠 가져서, 웹앱에는 글자가 빠진 줄이 도착하는 그림">
@@ -600,7 +604,7 @@ R          무지개색   T  한 칸 돌리기</pre></article>
 
   <!-- 2-4 -->
   <section class="card" aria-labelledby="c24">
-    <div class="card-head"><span class="card-num">2-4</span><h2 id="c24">연결 시험하기</h2></div>
+    <div class="card-head"><span class="card-num">3-4</span><h2 id="c24">연결 시험하기</h2></div>
     <p class="lead">이 페이지에서 바로 시험합니다. <b>USB 연결</b>을 누르고, 뜨는 창에서 마이크로비트 포트(USB 직렬 장치, COM 번호)를 고른 뒤 <b>연결</b>을 누르세요.</p>
     <div class="tester">
       <div class="tester-bar">
@@ -639,7 +643,7 @@ R          무지개색   T  한 칸 돌리기</pre></article>
 
   <!-- 2-5 -->
   <section class="card" aria-labelledby="c25">
-    <div class="card-head"><span class="card-num">2-5</span><h2 id="c25">잘 안 될 때</h2></div>
+    <div class="card-head"><span class="card-num">3-5</span><h2 id="c25">잘 안 될 때</h2></div>
     <table class="tbl">
       <thead><tr><th>이런 일이 생기면</th><th>이렇게 해 보세요</th></tr></thead>
       <tbody>
@@ -655,8 +659,8 @@ R          무지개색   T  한 칸 돌리기</pre></article>
   </section>
 
   <div class="next">
-    <button type="button" class="back" data-go="1">← 1단계로</button>
-    <button type="button" data-href="practice.html">3단계 활동지 실습 →</button>
+    <button type="button" class="back" data-href="wiring.html">← 2단계 배선 연습</button>
+    <button type="button" data-href="practice.html">4단계 활동지 실습 →</button>
   </div>
 </div>
 </main>
