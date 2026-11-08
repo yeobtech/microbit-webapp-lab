@@ -136,6 +136,34 @@
   .gvs .cname{margin-left:8px;font-weight:700}
   .gvs strong{display:block;font-size:18px;margin:6px 0 4px}
   .gvs p{margin:0}
+  /* 마이크로비트 방향 비교 */
+  .orient{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin:16px 0}
+  .orient figure{margin:0;background:var(--card);border:3px solid var(--line);border-radius:16px;padding:12px}
+  .orient figure.ok{border-color:#1f8a57}
+  .orient figure.no{border-color:#c9352a}
+  .orient svg{width:100%;height:auto;display:block}
+  .orient figcaption{margin-top:8px;font-size:16px;color:var(--ink)}
+  .orient figcaption b{display:block;font-size:18px;margin-bottom:2px}
+  .orient .ok b{color:#1f7a4a}.orient .no b{color:#b42318}
+  .checks3{margin:8px 0 0;padding-left:22px}.checks3 li+li{margin-top:6px}
+  /* G·V·S 연결 규칙 */
+  .gvs-how{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:20px;align-items:start}
+  .gvs-how svg{width:100%;height:auto;display:block;background:var(--card);border-radius:14px}
+  .gvs-rule{font-size:20px;font-weight:800;margin:0 0 10px}
+  .gvs-map{width:100%;border-collapse:collapse;margin-top:16px;font-size:16px}
+  .gvs-map th,.gvs-map td{padding:10px 8px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+  .gvs-map th:nth-child(2){color:#252b29}.gvs-map th:nth-child(3){color:#c4302b}.gvs-map th:nth-child(4){color:#a07a00}
+  .gvs-warn{margin:16px 0 0;padding:14px 18px;background:#fdecea;border-radius:14px}
+  .gvs-warn li+li{margin-top:6px}
+  /* 다음에 꽂을 곳 */
+  .next-card{display:grid;gap:6px;margin:10px 0;padding:14px 18px;border-radius:16px;background:#fff4cd;border:2px solid #e0a800;font-size:17px}
+  .next-card[hidden]{display:none}
+  .next-card .nc-top{display:flex;align-items:center;gap:8px;font-weight:800}
+  .next-card .nc-top i{width:14px;height:14px;border-radius:50%;display:inline-block;border:1px solid #0003}
+  .next-card .nc-pair{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:19px;font-weight:700}
+  .next-card .nc-pair span{background:#fff;border-radius:999px;padding:4px 12px}
+  .next-card .nc-why{font-size:15px;color:var(--muted)}
+  @media (max-width:760px){.orient,.gvs-how{grid-template-columns:1fr}}
   .pinphoto{position:relative;max-width:720px;margin:6px auto 10px}
   .pinphoto img{display:block;width:100%}
   .hot{position:absolute;border:3px dashed transparent;background:transparent;padding:0}
@@ -210,6 +238,43 @@
       <p class="dnote">뺄 때도 전원을 분리하고 보드 양쪽을 잡아 수직으로 빼요. 좌우로 세게 비틀지 않아요.</p>
     </div>
   </section>
+  <section class="card" aria-labelledby="orientTitle">
+    <div class="sec-head"><h2 id="orientTitle">바른 방향과 거꾸로 꽂은 모습</h2><span>꽂은 뒤 꼭 비교해요</span></div>
+    <div class="orient">
+      <figure class="ok"><svg viewBox="0 0 300 230" role="img" aria-label="마이크로비트 앞면이 앞으로 보이게 바르게 꽂은 모습">
+  <rect x="40" y="70" width="220" height="44" rx="10" fill="#9d79c3"/><text x="150" y="98" text-anchor="middle" font-size="13" fill="#fff">배터리 (뒤쪽)</text>
+  <rect x="18" y="168" width="264" height="48" rx="10" fill="#232a27"/>
+  <rect x="58" y="150" width="184" height="22" rx="4" fill="#0f1412"/>
+  <rect x="70" y="40" width="160" height="124" rx="10" fill="#1d2523" stroke="#3b4744"/>
+  <rect x="136" y="32" width="28" height="12" rx="3" fill="#c8d0d3"/><text x="150" y="26" text-anchor="middle" font-size="11" fill="#555">USB</text>
+  <rect x="80" y="150" width="18" height="14" rx="2" fill="#d6b35a"/><rect x="110" y="150" width="18" height="14" rx="2" fill="#d6b35a"/><rect x="140" y="150" width="18" height="14" rx="2" fill="#d6b35a"/><rect x="170" y="150" width="18" height="14" rx="2" fill="#d6b35a"/><rect x="200" y="150" width="18" height="14" rx="2" fill="#d6b35a"/>
+  <rect x="121" y="60" width="6" height="8" rx="1" fill="#f2b705"/><rect x="134" y="60" width="6" height="8" rx="1" fill="#f2b705"/><rect x="147" y="60" width="6" height="8" rx="1" fill="#f2b705"/><rect x="160" y="60" width="6" height="8" rx="1" fill="#f2b705"/><rect x="173" y="60" width="6" height="8" rx="1" fill="#f2b705"/><rect x="121" y="75" width="6" height="8" rx="1" fill="#f2b705"/><rect x="134" y="75" width="6" height="8" rx="1" fill="#f2b705"/><rect x="147" y="75" width="6" height="8" rx="1" fill="#f2b705"/><rect x="160" y="75" width="6" height="8" rx="1" fill="#f2b705"/><rect x="173" y="75" width="6" height="8" rx="1" fill="#f2b705"/><rect x="121" y="90" width="6" height="8" rx="1" fill="#f2b705"/><rect x="134" y="90" width="6" height="8" rx="1" fill="#f2b705"/><rect x="147" y="90" width="6" height="8" rx="1" fill="#f2b705"/><rect x="160" y="90" width="6" height="8" rx="1" fill="#f2b705"/><rect x="173" y="90" width="6" height="8" rx="1" fill="#f2b705"/><rect x="121" y="105" width="6" height="8" rx="1" fill="#f2b705"/><rect x="134" y="105" width="6" height="8" rx="1" fill="#f2b705"/><rect x="147" y="105" width="6" height="8" rx="1" fill="#f2b705"/><rect x="160" y="105" width="6" height="8" rx="1" fill="#f2b705"/><rect x="173" y="105" width="6" height="8" rx="1" fill="#f2b705"/><rect x="121" y="120" width="6" height="8" rx="1" fill="#f2b705"/><rect x="134" y="120" width="6" height="8" rx="1" fill="#f2b705"/><rect x="147" y="120" width="6" height="8" rx="1" fill="#f2b705"/><rect x="160" y="120" width="6" height="8" rx="1" fill="#f2b705"/><rect x="173" y="120" width="6" height="8" rx="1" fill="#f2b705"/><circle cx="92" cy="100" r="11" fill="#555"/><circle cx="92" cy="100" r="6" fill="#222"/><text x="92" y="126" text-anchor="middle" font-size="13" font-weight="700" fill="#fff">A</text><circle cx="208" cy="100" r="11" fill="#555"/><circle cx="208" cy="100" r="6" fill="#222"/><text x="208" y="126" text-anchor="middle" font-size="13" font-weight="700" fill="#fff">B</text>
+  <circle cx="268" cy="44" r="20" fill="#1f8a57"/>
+  <path d="M258 45 L265 52 L279 36" stroke="#fff" stroke-width="5" fill="none" stroke-linecap="round"/>
+  <text x="150" y="200" text-anchor="middle" font-size="13" fill="#dfe6e2">Robotbit 확장보드 (내 쪽)</text>
+</svg><figcaption><b>바른 방향</b>LED 25개와 A·B 버튼이 있는 앞면이 내 쪽을 봐요. 배터리는 뒤쪽에 있어요.</figcaption></figure>
+      <figure class="no"><svg viewBox="0 0 300 230" role="img" aria-label="마이크로비트 뒷면이 앞으로 보이게 거꾸로 꽂은 모습">
+  <rect x="40" y="70" width="220" height="44" rx="10" fill="#9d79c3"/><text x="150" y="98" text-anchor="middle" font-size="13" fill="#fff">배터리 (뒤쪽)</text>
+  <rect x="18" y="168" width="264" height="48" rx="10" fill="#232a27"/>
+  <rect x="58" y="150" width="184" height="22" rx="4" fill="#0f1412"/>
+  <rect x="70" y="40" width="160" height="124" rx="10" fill="#2b3533" stroke="#3b4744"/>
+  <rect x="136" y="32" width="28" height="12" rx="3" fill="#c8d0d3"/><text x="150" y="26" text-anchor="middle" font-size="11" fill="#555">USB</text>
+  <rect x="80" y="150" width="18" height="14" rx="2" fill="#d6b35a"/><rect x="110" y="150" width="18" height="14" rx="2" fill="#d6b35a"/><rect x="140" y="150" width="18" height="14" rx="2" fill="#d6b35a"/><rect x="170" y="150" width="18" height="14" rx="2" fill="#d6b35a"/><rect x="200" y="150" width="18" height="14" rx="2" fill="#d6b35a"/>
+  <rect x="95" y="62" width="34" height="34" rx="3" fill="#4b5753"/><rect x="140" y="66" width="22" height="22" rx="2" fill="#56635f"/><rect x="172" y="70" width="40" height="10" rx="2" fill="#56635f"/><rect x="92" y="108" width="120" height="6" rx="2" fill="#7f8a86"/><rect x="92" y="120" width="90" height="6" rx="2" fill="#7f8a86"/><rect x="176" y="96" width="28" height="18" rx="2" fill="#e8e3d0"/>
+  <circle cx="268" cy="44" r="20" fill="#c9352a"/>
+  <path d="M259 35 L277 53 M277 35 L259 53" stroke="#fff" stroke-width="5" stroke-linecap="round"/>
+  <text x="150" y="200" text-anchor="middle" font-size="13" fill="#dfe6e2">Robotbit 확장보드 (내 쪽)</text>
+</svg><figcaption><b>거꾸로 꽂음</b>작은 부품과 글씨가 있는 뒷면이 내 쪽을 봐요. LED와 버튼이 안 보여요.</figcaption></figure>
+    </div>
+    <strong>꽂은 뒤 세 가지를 확인해요</strong>
+    <ol class="checks3">
+      <li>LED 25개와 A·B 버튼이 배터리 반대쪽(내 쪽)을 봐요.</li>
+      <li>USB 단자가 맨 위에 있어요.</li>
+      <li>금색 단자가 검은 슬롯에 끝까지 들어가 흔들리지 않아요.</li>
+    </ol>
+    <p class="note" style="margin-top:12px">거꾸로 꽂았다면 USB와 배터리 전원을 먼저 분리해요. 그다음 보드 양쪽을 잡아 수직으로 빼고, 앞면이 내 쪽을 보게 다시 꽂아요.</p>
+  </section>
+  <div class="quiz" data-quiz="orient"></div>
   <section class="card player">
     <div class="sec-head"><h2>사진 가이드</h2><span id="gCount">1 / 8</span></div>
     <div class="ph big" id="gPhoto"></div>
@@ -265,6 +330,53 @@
     <p>GND는 회로의 기준점, V·VCC는 전원, S는 신호 연결점이에요. 색과 글자를 함께 확인하고, 핀 번호는 프로그램의 이름과 맞춰요.</p>
   </section>
   <div class="gvs" id="gvs"></div>
+  <section class="card" aria-labelledby="gvsHowTitle">
+    <div class="sec-head"><h2 id="gvsHowTitle">어떻게 연결하나요?</h2><span>부품 하나 = 선 3개</span></div>
+    <div class="gvs-how">
+      <svg viewBox="0 0 340 260" role="img" aria-label="확장보드 P15 열의 G, V, S 세 핀을 네오픽셀의 GND, VCC, DIN에 각각 연결한 그림">
+  <rect x="10" y="20" width="150" height="150" rx="12" fill="#232a27"/>
+  <text x="85" y="42" text-anchor="middle" font-size="13" fill="#dfe6e2">확장보드 · P15 열</text>
+  <rect x="62" y="56" width="46" height="100" rx="8" fill="none" stroke="#f2b705" stroke-width="3" stroke-dasharray="6 4"/>
+  <rect x="70" y="62" width="30" height="24" rx="4" fill="#3a403e"/><text x="44" y="79" text-anchor="middle" font-size="14" font-weight="800" fill="#fff">G</text>
+  <rect x="70" y="94" width="30" height="24" rx="4" fill="#df3d36"/><text x="44" y="111" text-anchor="middle" font-size="14" font-weight="800" fill="#ff8b84">V</text>
+  <rect x="70" y="126" width="30" height="24" rx="4" fill="#d8a600"/><text x="44" y="143" text-anchor="middle" font-size="14" font-weight="800" fill="#ffd34d">S</text>
+  <text x="85" y="186" text-anchor="middle" font-size="12" fill="#555">위에서부터 G · V · S</text>
+  <path d="M100 74 C180 74 200 74 236 74" stroke="#252b29" stroke-width="6" fill="none"/>
+  <path d="M100 106 C180 106 200 106 236 106" stroke="#df3d36" stroke-width="6" fill="none"/>
+  <path d="M100 138 C180 138 200 138 236 138" stroke="#d8a600" stroke-width="6" fill="none"/>
+  <rect x="236" y="56" width="94" height="100" rx="10" fill="#26352f"/>
+  <text x="283" y="79" text-anchor="middle" font-size="13" font-weight="700" fill="#fff">GND</text>
+  <text x="283" y="111" text-anchor="middle" font-size="13" font-weight="700" fill="#ff8b84">VCC</text>
+  <text x="283" y="143" text-anchor="middle" font-size="13" font-weight="700" fill="#ffd34d">DIN</text>
+  <text x="283" y="176" text-anchor="middle" font-size="12" fill="#555">네오픽셀 쪽</text>
+  <text x="170" y="222" text-anchor="middle" font-size="15" font-weight="800" fill="#252b29">같은 역할끼리: G→GND, V→VCC, S→신호</text>
+  <text x="170" y="244" text-anchor="middle" font-size="13" fill="#555">부품 하나에 선 3개, 보드 한 열에 같이 꽂아요</text>
+</svg>
+      <div>
+        <p class="gvs-rule">같은 역할끼리 연결해요. G는 G, V는 V, S는 S.</p>
+        <ol class="checks3">
+          <li>부품의 핀 이름을 읽어요. (GND·VCC·신호 이름)</li>
+          <li>코드에 나온 핀 번호의 열을 보드에서 찾아요. (P14, P15, S1)</li>
+          <li>그 열에서 위의 검정 G, 가운데 빨강 V, 아래 노랑 S에 하나씩 꽂아요.</li>
+        </ol>
+      </div>
+    </div>
+    <div style="overflow-x:auto">
+      <table class="gvs-map">
+        <thead><tr><th>부품</th><th>G · 검정 줄</th><th>V · 빨강 줄</th><th>S · 노랑 줄</th><th>보드 열</th></tr></thead>
+        <tbody>
+          <tr><td>초음파센서 HC-SR04</td><td>GND</td><td>VCC</td><td>Trig → P14, Echo → P13</td><td>P14 (Echo만 P13)</td></tr>
+          <tr><td>서보모터 SG90</td><td>갈색 선</td><td>빨강 선 (VM)</td><td>주황 선</td><td>S1</td></tr>
+          <tr><td>네오픽셀 6개</td><td>GND (검정)</td><td>VCC (빨강)</td><td>DIN (노랑)</td><td>P15</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <ul class="gvs-warn">
+      <li><b>G와 V를 바꿔 꽂지 않아요.</b> 부품이 뜨거워지거나 고장 날 수 있어요. 전원을 켜기 전에 꼭 확인해요.</li>
+      <li><b>신호선을 V에 꽂지 않아요.</b> 부품이 동작하지 않고, 핀이 상할 수 있어요.</li>
+      <li><b>서보의 빨강 선은 S1 열의 VM에 꽂아요.</b> P핀 줄의 3.3V가 아니에요.</li>
+    </ul>
+  </section>
   <section class="card">
     <div class="sec-head"><h2 id="gameTitle"></h2><span id="gameCount">0 / 3</span></div>
     <p class="dnote">사진에서 줄을 누르면 정답 위치가 굵은 색 테두리와 이름표로 표시돼요.</p>
@@ -283,7 +395,7 @@
 <div data-step="5" hidden>
   <section class="head">
     <h1>초음파센서 · 서보모터 · 네오픽셀을 한 보드에</h1>
-    <p>실제로 꽂기 전에 사진이나 3D 작업대에서 먼저 연결해 봅니다. 연결할 두 핀을 차례로 누르면 선이 생깁니다. 공통 코드와 같은 핀 번호를 써야 합니다.</p>
+    <p>실제로 꽂기 전에 사진에서 먼저 연결해 봅니다. 연결할 두 핀을 차례로 누르면 선이 생깁니다. 3D는 다 연결한 뒤 위치를 다시 확인할 때 써요.</p>
   </section>
 
   <section class="card">
@@ -311,15 +423,17 @@
       <label>사진 크기 <select id="zoom"><option value="1">기본</option><option value="1.4">크게</option><option value="1.8">더 크게</option></select></label>
     </div>
     <div class="status" id="status" data-tone="normal"><output aria-live="polite" id="msg"></output><button type="button" class="btn ghost" id="cancelBtn" hidden>선택 취소</button></div>
+    <div class="next-card" id="nextCard" aria-live="polite" hidden></div>
     <p class="legend">작은 핀은 사진 아래 이름표를 눌러도 연결됩니다.<i style="background:var(--gnd)"></i>GND <i style="background:var(--pwr)"></i>전원 <i style="background:var(--sig)"></i>신호 <i style="background:var(--sig2)"></i>Echo 신호</p>
     <div class="w3-toolbar" role="group" aria-label="배선 작업대 보기">
-      <button type="button" class="btn" id="w3Toggle" aria-pressed="false">3D 작업대 열기</button>
+      <button type="button" class="btn" id="w3Toggle" aria-pressed="false">3D로 확인하기</button>
+      <button type="button" class="btn ghost" id="w3Next" disabled>다음 연결로 확대</button>
       <button type="button" class="btn ghost" id="w3Top" disabled>위에서 보기</button>
       <button type="button" class="btn ghost" id="w3Reset" disabled>전체 보기</button>
       <button type="button" class="btn ghost" id="w3Power" aria-pressed="false">배터리 전원 켜기</button>
       <label>부품 확대 <select id="w3Focus" disabled><option value="all">전체</option><option value="board">Robotbit 보드</option><option value="ultra">초음파센서</option><option value="servo">서보모터</option><option value="neo">네오픽셀</option></select></label>
     </div>
-    <p id="w3Help" class="dnote" role="status">3D에서도 연결 기록과 연습 단계가 이어집니다.</p>
+    <p id="w3Help" class="dnote" role="status">처음에는 사진에서 연결해 보세요. 3D는 위치를 다시 확인할 때 쓰면 좋아요. 연결 기록은 그대로 이어집니다.</p>
     <p id="w3PowerState" class="w3-power-state" role="status">전원 OFF · 선을 연결할 수 있어요.</p>
     <div id="w3Panel" hidden>
       <div id="w3Viewport"></div>
@@ -532,11 +646,28 @@ function render() {
     b.setAttribute('aria-pressed', String(b.dataset.mode === st.mode));
     b.classList.toggle('done', st.passed.has(b.dataset.mode));
   });
+  renderNext();
   $('modeExplain').textContent = {guide: '따라 하기: 연결할 두 곳이 빛나요.', labels: '이름만 보기: 핀 이름을 읽고 연결해요.', solo: '혼자 연결: 이름표 없이 위치와 색을 보고 연결해요.'}[st.mode];
   requestAnimationFrame(drawWires);
   window.dispatchEvent(new Event('wiring-state'));
 }
 
+const KIND = {ground: ['검정', 'G끼리 · 검정 줄'], power: ['빨강', 'V끼리 · 빨강 줄'], signal: ['노랑', 'S끼리 · 노랑 줄']};
+function renderNext() {
+  const card = $('nextCard');
+  if (st.hint === null || st.verified || st.mode === 'solo') { card.hidden = true; return; }
+  const w = scene.wires[st.hint], a = pinById(w.from), b = pinById(w.to);
+  const kind = w.color === B ? ['파랑', 'Echo 신호 · 노랑 줄(P13)'] : KIND[a.kind];
+  card.hidden = false;
+  card.innerHTML = '<div class="nc-top"><i></i><span></span></div><div class="nc-pair"><span></span>→<span></span></div><div class="nc-why"></div>';
+  card.querySelector('i').style.background = w.color;
+  card.querySelector('.nc-top span').textContent = `다음에 꽂을 곳 ${st.conns.length + 1} / ${scene.wires.length} · ${kind[0]} 선 (${kind[1]})`;
+  const [p1, p2] = card.querySelectorAll('.nc-pair span');
+  const part = id => ({ultra: '초음파센서', servo: '서보모터', neo: '네오픽셀'})[id.split('.')[0]] || '확장보드';
+  p1.textContent = `① ${part(w.from)} ${a.label}`;
+  p2.textContent = `② ${part(w.to)} ${b.label}`;
+  card.querySelector('.nc-why').textContent = st.mode === 'guide' ? '사진(또는 3D)에서 빛나는 두 핀이에요. ①을 누른 다음 ②를 누르세요.' : '방금 고른 핀의 짝이에요. ①을 누른 다음 ②를 누르세요.';
+}
 function say(text, tone) { $('msg').textContent = text; $('status').dataset.tone = tone || 'normal'; }
 
 function center(id) {
@@ -680,6 +811,7 @@ document.querySelectorAll('[data-photo]').forEach(d => d.append(photoButton(d.da
 const QUIZ = {
   cable: {q: '양쪽 모두 튀어나온 핀에 연결하려면 어떤 선이 필요할까요?', o: ['수–수', '암–수', '암–암'], a: 2, e: '튀어나온 핀을 받아 줄 구멍이 양쪽에 필요해요.'},
   plug: {q: '점퍼선을 뺄 때 어디를 잡아야 할까요?', o: ['얇은 전선', '커넥터 몸체', '옆의 다른 부품'], a: 1, e: '전원을 분리한 뒤, 선 끝의 플라스틱 커넥터 몸체를 잡아요.'},
+  orient: {q: '마이크로비트를 꽂은 뒤 내 쪽에서 보여야 하는 면은?', o: ['LED 25개와 A·B 버튼이 있는 앞면', '작은 부품과 글씨가 있는 뒷면', '어느 쪽이든 상관없어요'], a: 0, e: '뒷면이 보이면 거꾸로 꽂은 거예요. 전원을 분리하고 빼서, 앞면이 배터리 반대쪽(내 쪽)을 보게 다시 꽂아요.'},
   board: {q: '보드를 살펴볼 때 가장 먼저 맞춰 볼 것은?', o: ['사진과 같은 방향', '점퍼선의 길이', '책상 색깔'], a: 0, e: 'USB 단자 같은 기준점을 찾아 방향을 맞추면 핀 위치를 찾기 쉬워요.'},
 };
 const passed = new Set();
@@ -773,9 +905,9 @@ showGuide(0);
 
 /* 4. G·V·S 찾기 */
 const pinInfo = [
-  {short: 'G', label: 'GND', color: '검정', c: 'var(--gnd)', role: '회로의 기준점', detail: '입문 회로에서는 보통 전원 −와 연결해요.'},
-  {short: 'V', label: 'VCC', color: '빨강', c: 'var(--pwr)', role: '부품에 전원 공급', detail: '필요한 전압은 제품마다 달라요. P핀 줄은 3.3V, S1~S8 줄은 VM이에요.'},
-  {short: 'S', label: 'Signal', color: '노랑', c: 'var(--sig)', role: '신호가 오가는 곳', detail: '신호 핀에 전원을 임의로 넣지 않아요.'},
+  {short: 'G', label: 'GND · 접지', color: '검정', c: 'var(--gnd)', role: '전기가 돌아오는 길이에요. 0V 기준점이에요', detail: '부품의 GND·−·갈색 선을 보드의 검정 G 줄에 꽂아요.'},
+  {short: 'V', label: 'VCC · 전원', color: '빨강', c: 'var(--pwr)', role: '부품에 전기를 주는 곳(+)이에요', detail: '부품의 VCC·+·빨강 선을 빨간 V 줄에 꽂아요. P핀 줄은 3.3V, 서보용 S1~S8 줄은 VM(배터리)이에요.'},
+  {short: 'S', label: 'Signal · 신호', color: '노랑', c: 'var(--sig)', role: '명령이나 측정값이 오가는 선이에요', detail: '부품의 신호 핀(Trig·Echo·DIN·주황 선)을 노란 S 줄에 꽂아요. 이 핀 번호를 코드가 써요.'},
 ];
 pinInfo.forEach(p => {
   const a = document.createElement('article'); a.style.setProperty('--c', p.c);

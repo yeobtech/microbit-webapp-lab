@@ -16,7 +16,8 @@ let usbCable;
 let switchKnob, batteryOff, batteryOn;
 const deviceCenters = {board:new THREE.Vector3(-3.3,.3,0),ultra:new THREE.Vector3(4,.3,-3.2),servo:new THREE.Vector3(4,.5,0),neo:new THREE.Vector3(4,.3,3.2)};
 let renderer, world, camera, orbit, wireGroup, active=false, visible=false, frame=0, failed=false;
-let state=api.getState(), wireSignature='';
+let state=api.getState(), wireSignature='', hintSignature='';
+let markers=[], stems=[], guideLine=null;
 
 function box(w,h,d,color,parent,pos) {
   const m = new THREE.Mesh(new THREE.BoxGeometry(w,h,d),new THREE.MeshStandardMaterial({color,roughness:.65}));
@@ -160,6 +161,42 @@ function createModels() {
   for(const [id,z] of [['g',2.7],['v',3.2],['s',3.7]]) pin('neo.'+id,[1.9,.45,z]);
   label('WS2812B · 네오픽셀 6개',[4.3,.5,4.65],4);
 }
+// 다음에 꽂을 두 핀 위에 세우는 번호 표시 (1, 2)
+function marker(text) {
+  const c=document.createElement('canvas');c.width=c.height=128;const g=c.getContext('2d');
+  g.beginPath();g.arc(64,64,56,0,Math.PI*2);g.fillStyle='#c27c00';g.fill();g.lineWidth=10;g.strokeStyle='#ffffff';g.stroke();
+  g.fillStyle='#ffffff';g.font='bold 76px sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillText(text,64,70);
+  const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;
+  const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:t,depthTest:false}));sp.scale.set(.75,.75,1);sp.renderOrder=10;sp.visible=false;world.add(sp);return sp;
+}
+function makeMarkers() {
+  markers=[marker('1'),marker('2')];
+  stems=markers.map(()=>{const m=new THREE.Mesh(new THREE.CylinderGeometry(.03,.03,1,8),new THREE.MeshBasicMaterial({color:0xc27c00,depthTest:false}));m.renderOrder=9;m.visible=false;world.add(m);return m;});
+}
+function updateGuide(hints,wire) {
+  const sig=hints.join('|')+(state.powered?'p':'');
+  if(sig===hintSignature) return;
+  hintSignature=sig;
+  if(guideLine){guideLine.geometry.dispose();guideLine.material.dispose();world.remove(guideLine);guideLine=null;}
+  markers.forEach((m,i)=>{
+    const id=hints[i],on=!!id&&!state.powered;m.visible=on;stems[i].visible=on;
+    if(!on) return;
+    const p=positions.get(id);m.position.set(p.x,p.y+1.25,p.z);stems[i].position.set(p.x,p.y+.6,p.z);stems[i].scale.set(1,1.1,1);
+  });
+  if(hints.length===2&&!state.powered){
+    const a=positions.get(hints[0]),b=positions.get(hints[1]);
+    const curve=new THREE.CubicBezierCurve3(a,a.clone().add(new THREE.Vector3(0,1.2,0)),b.clone().add(new THREE.Vector3(0,1.2,0)),b);
+    const geo=new THREE.BufferGeometry().setFromPoints(curve.getPoints(48));
+    guideLine=new THREE.Line(geo,new THREE.LineDashedMaterial({color:wire.color,dashSize:.18,gapSize:.12,depthTest:false}));
+    guideLine.computeLineDistances();guideLine.renderOrder=8;world.add(guideLine);
+  }
+}
+function frameNext() {
+  if(state.hint===null) return;
+  const w=data.wires[state.hint],a=positions.get(w.from),b=positions.get(w.to);
+  const mid=a.clone().add(b).multiplyScalar(.5),d=Math.max(5,a.distanceTo(b)*1.5);
+  orbit.target.copy(mid);camera.position.copy(mid).add(new THREE.Vector3(0,d*.95,d*.55));orbit.update();requestDraw();
+}
 function makeButtons() {
   for(const d of data.devices) {
     const section=document.createElement('section'), title=document.createElement('h3'), list=document.createElement('div');
@@ -186,6 +223,7 @@ function sync() {
     text.textContent=(wired.has(id)?'✓ ':'')+(state.mode==='solo'?'핀 '+(index+1):p.label);
     button.disabled=state.verified||state.powered||state.usbConnected;button.setAttribute('aria-pressed',String(state.selected===id));button.dataset.hint=String(hints.includes(id));button.dataset.wired=String(wired.has(id));
   }
+  $('w3Next').disabled=!active||state.hint===null||state.powered||state.verified;
   if(!world) return;
   usbCable.visible=state.usbConnected;
   switchKnob.position.x=state.powered?-1.47:-1.83;
@@ -194,6 +232,7 @@ function sync() {
   pinLabels.forEach(label=>{label.visible=state.mode!=='solo';});
   for(const [id,{halo}] of pinViews) {
     halo.visible=!state.powered&&(state.selected===id||hints.includes(id)||wired.has(id));
+    halo.scale.setScalar(hints.includes(id)&&state.selected!==id?2.2:1);
     halo.material.color.set(state.selected===id?0x287fe0:wired.has(id)?0x299866:0xf0ae00);
   }
   const signature=state.conns.join(',');
@@ -202,6 +241,7 @@ function sync() {
     state.conns.forEach(i=>{const w=data.wires[i];wireGroup.add(tube(positions.get(w.from),positions.get(w.to),w.color,1.4+i*.13));});
     wireSignature=signature;
   }
+  updateGuide(hints,state.hint===null?null:data.wires[state.hint]);
   updateAnnotations();requestDraw();
 }
 function updateAnnotations() {
@@ -239,7 +279,7 @@ function init() {
   const light=new THREE.DirectionalLight(0xffffff,3);light.position.set(-4,12,8);world.add(light);
   camera=new THREE.PerspectiveCamera(45,1,.1,100);
   orbit=new OrbitControls(camera,canvas);orbit.enablePan=false;orbit.minDistance=4;orbit.maxDistance=52;orbit.minPolarAngle=.02;orbit.maxPolarAngle=1.3;orbit.addEventListener('change',requestDraw);
-  wireGroup=new THREE.Group();world.add(wireGroup);createModels();
+  wireGroup=new THREE.Group();world.add(wireGroup);createModels();makeMarkers();
   wireSignature='initial';
   const raycaster=new THREE.Raycaster(),pointer=new THREE.Vector2();let down=null,dragged=false;const pointers=new Set();
   canvas.addEventListener('pointerdown',e=>{pointers.add(e.pointerId);if(pointers.size>1)dragged=true;else{down={x:e.clientX,y:e.clientY};dragged=false;}});
@@ -264,13 +304,14 @@ toggle.addEventListener('click',async()=>{
     toggle.disabled=true;
     await document.fonts.load('44px "Jua"');
     if(!renderer)init();active=!active;panel.hidden=!active;photo.hidden=active;$('zoom').disabled=active;
-    toggle.textContent=active?'사진으로 보기':'3D 작업대 열기';toggle.setAttribute('aria-pressed',String(active));controlsUI.forEach(el=>el.disabled=!active);
-    $('w3Help').textContent=active?'핀 두 개를 차례로 눌러 연결해 보세요. 작은 핀은 부품을 확대하거나 아래 이름표로 선택할 수 있어요.':'사진 작업대로 돌아왔어요. 3D에서 연결한 선도 그대로입니다.';
+    toggle.textContent=active?'사진으로 보기':'3D로 확인하기';toggle.setAttribute('aria-pressed',String(active));controlsUI.forEach(el=>el.disabled=!active);
+    $('w3Help').textContent=active?'숫자 1, 2가 떠 있는 두 핀이 다음에 꽂을 곳이에요. 잘 안 보이면 「다음 연결로 확대」를 누르거나 아래 이름표를 누르세요.':'사진 작업대로 돌아왔어요. 3D에서 연결한 선도 그대로입니다.';
     if(active){resize();sync();}else{cancelAnimationFrame(frame);frame=0;window.dispatchEvent(new Event('resize'));}
   }catch(error){console.warn('3D wiring unavailable',error);fail();}
   finally { if(!failed)toggle.disabled=false; }
 });
 $('w3Reset').addEventListener('click',()=>{$('w3Focus').value='all';frameScene();});
+$('w3Next').addEventListener('click',frameNext);
 $('w3Top').addEventListener('click',()=>frameScene($('w3Focus').value,true));
 $('w3Focus').addEventListener('change',e=>frameScene(e.target.value));
 window.addEventListener('wiring-state',sync);
