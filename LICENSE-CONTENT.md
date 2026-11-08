@@ -10,8 +10,8 @@ Copyright (c) 2026 김세엽
 - 페이지에 쓴 수업 글: 단계 설명, 확인 문제, 안내 문장, 「이럴 땐 이렇게」 수정 요청 문장, 돌아보기 질문
 - 제미나이 프롬프트 문서 (`prompt/프롬프트_기본HTML없음.md`의 [A]·[B]와 작성 예시)
 - 선생님이 직접 찍거나 만든 그림
-  - 실제 장치·웹앱 사진: `device-real`, `app-full`, `lantern-day/night/walk/warning`, `gm-5-dashboard`
-  - 핀랩(PINLAB)에서 가져온 자료: `pl-board`, `pl-board-pins`, `pl-board-power`, `pl-microbit-insert`, `pl-microbit-board-anatomy`, `pl-neopixel` (핀랩도 같은 저작자의 자료입니다)
+  - 실제 장치·웹앱 사진: `device-real`, `app-full`, `lantern-day/night/walk/warning`, `gm-5-dashboard`, `pl-neopixel-real`(네오픽셀 띠 실물)
+  - 핀랩(PINLAB)에서 가져온 자료: `pl-board`, `pl-board-pins`, `pl-board-power`, `pl-microbit-insert`, `pl-microbit-board-anatomy` (핀랩도 같은 저작자의 자료입니다)
   - 화면 사용법을 보여 주는 캡처: `mk-*`(메이크코드), `gm-1`·`gm-2`·`gm-4`(제미나이·크롬), `cr-*`(구글 클래스룸), `np-*`(메모장)
     — 캡처에 나오는 프로그램 화면, 로고, 상표의 권리는 각 회사(Microsoft, Google 등)에 있습니다. 이 라이선스는 캡처를 고르고 잘라 설명에 붙인 부분에만 적용됩니다.
 

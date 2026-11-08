@@ -164,15 +164,16 @@ function createModels() {
     pin('servo.'+id,[2.3,.4,z]);world.add(tube(new THREE.Vector3(2.3,.2,z),new THREE.Vector3(3.75,.35,z*.6),id==='g'?0x805734:id==='v'?0xdf3d36:0xe88a31,.2,.035));
   }
   // Six LED module; sockets at its input side, no invented extra LEDs.
-  box(5.3,.18,1.35,0x26352f,world,[4.2,.1,3.2]);
-  for(let i=0;i<6;i++) {box(.49,.12,.6,0xe9e9d9,world,[2.75+i*.66,.25,3.2]);cylinder(.13,.14,0xd3bd7c,world,[2.75+i*.66,.3,3.2]);}
+  // 실물: 흰색 유연 LED 띠. LED 6개, 끝에서 빨강·검정·노랑 선이 나와 작은 흰 커넥터로 모임
+  box(5.3,.06,.9,0xf1efe8,world,[4.2,.05,3.2]);
+  for(let i=0;i<6;i++) {box(.42,.12,.42,0xffffff,world,[2.75+i*.66,.14,3.2]);cylinder(.1,.05,0xd9a46a,world,[2.75+i*.66,.22,3.2]);box(.12,.02,.18,0xc98d55,world,[3.08+i*.66,.09,3.0]);box(.12,.02,.18,0xc98d55,world,[3.08+i*.66,.09,3.4]);}
   // 실제 모듈: 소켓에서 짧은 선 3개가 나와 있고, 위에서부터 빨강 VCC · 검정 GND · 노랑 DIN
-  box(.42,.34,1.3,0x111515,world,[1.6,.28,3.2]);
+  box(.42,.2,.7,0xeceae2,world,[1.85,.12,3.2]);box(.3,.22,1.2,0xf4f4f1,world,[1.15,.22,3.2]);
   for(const [id,z,c] of [['v',2.75,0xdf3d36],['g',3.2,0x303734],['s',3.65,0xf0bf23]]) {
     pin('neo.'+id,[.75,.45,z]);
-    world.add(tube(new THREE.Vector3(1.42,.3,z),new THREE.Vector3(.95,.3,z),c,.05,.045));
+    world.add(tube(new THREE.Vector3(1.85,.12,3.2+(z-3.2)*.25),new THREE.Vector3(1.0,.3,z),c,.08,.045));
   }
-  pinLabels.push(silk('VCC',[1.6,.47,2.75],.34),silk('GND',[1.6,.47,3.2],.34),silk('DIN',[1.6,.47,3.65],.34));
+  pinLabels.push(silk('VCC',[.35,.14,2.75],.4),silk('GND',[.35,.14,3.2],.4),silk('DIN',[.35,.14,3.65],.4));
   label('WS2812B · 네오픽셀 6개',[4.3,.5,4.65],4);
 }
 // 다음에 꽂을 두 핀 위에 세우는 번호 표시 (1, 2)

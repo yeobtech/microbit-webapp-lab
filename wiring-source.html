@@ -44,6 +44,7 @@
   .stage{position:relative;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;padding:14px;min-width:640px}
   .device{background:var(--card);padding:10px;position:relative}
   .device.board{grid-column:1 / -1;max-width:720px;width:100%;justify-self:center}
+  .device.wide{grid-column:1 / -1;max-width:600px;width:100%;justify-self:center}
   .device h3{margin:0 0 6px}
   .photo{position:relative;width:100%}
   .photo svg{display:block;width:100%;height:100%}
@@ -355,7 +356,7 @@
       <div>
         <p class="gvs-rule">같은 역할끼리 연결해요. G는 G, V는 V, S는 S.</p>
         <ol class="checks3">
-          <li>부품의 핀 이름을 읽어요. (GND·VCC·신호 이름) 부품마다 핀 순서가 달라요. 네오픽셀은 VCC가 맨 위예요.</li>
+          <li>부품의 핀 이름이나 선 색을 읽어요. 부품마다 순서가 달라요. 네오픽셀 띠는 빨강 VCC가 맨 위, 검정 GND가 가운데예요.</li>
           <li>코드에 나온 핀 번호의 열을 보드에서 찾아요. (P14, P15, S1)</li>
           <li>그 열에서 위의 검정 G, 가운데 빨강 V, 아래 노랑 S에 하나씩 꽂아요.</li>
         </ol>
@@ -494,7 +495,7 @@
       <li>점퍼선 사진은 모두 크기를 줄였습니다.</li>
       <li>초음파센서 사진: Suyash Dwivedi, <a href="https://commons.wikimedia.org/wiki/File:HC_SR04_Ultrasonic_Module.jpg" target="_blank" rel="noopener">Wikimedia Commons</a>, <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener">CC BY-SA 4.0</a> (크기를 줄임)</li>
       <li>서보모터 사진: Suyash Dwivedi, <a href="https://commons.wikimedia.org/w/index.php?curid=179995500">Wikimedia Commons</a>, <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a> (잘라서 크기를 줄임)</li>
-      <li>네오픽셀 사진: OpenAI 이미지 생성으로 만든 교육용 이미지</li>
+      <li>네오픽셀 띠 사진: 수업에서 쓰는 실물을 직접 찍은 사진 (돌려서 잘라 씀)</li>
     </ul>
   </section>
 </main>
@@ -533,9 +534,9 @@ const scene = {
     {id: 'servo', name: 'SG90 · 서보모터', image: 'images/pl-servo.webp', ratio: 1080 / 990,
       note: '3핀 커넥터의 갈색·빨강·주황 선의 역할을 확인해요.',
       pins: [P('servo.s', '주황 · 신호', 'signal', [86.9, 9.9]), P('servo.v', '빨강 · 전원', 'power', [89.7, 12.4]), P('servo.g', '갈색 · GND', 'ground', [92.7, 15.4])]},
-    {id: 'neo', name: 'WS2812B · 6픽셀 모듈', image: 'images/pl-neopixel.webp', ratio: 1776 / 887,
-      note: '이 사진은 예시 그림이에요. 실제 모듈은 짧은 선 3개가 나와 있고, 위에서부터 빨강 VCC · 검정 GND · 노랑 DIN이에요. 색 순서가 달라도 글자를 보고 같은 역할끼리 꽂아요.',
-      pins: [P('neo.g', '검정 · GND', 'ground', [5.1, 43.5]), P('neo.v', '빨강 · VCC', 'power', [5.1, 50.3]), P('neo.s', '노랑 · DIN', 'signal', [5.1, 57.5])]},
+    {id: 'neo', cls: 'wide', name: 'WS2812B · 네오픽셀 띠 (선 끝 확대)', image: 'images/pl-neopixel-real.webp', crop: [0, 10, 32, 42], ratio: 1452 / 240,
+      note: '수업에서 쓰는 실물 네오픽셀 띠의 선 끝이에요. 선 3개가 위에서부터 빨강 VCC · 검정 GND · 노랑 DIN 순서예요. 검정이 가운데라서 보드의 G·V·S 순서와 달라요. 색을 보고 같은 역할끼리 꽂아요.',
+      pins: [P('neo.v', '빨강 · VCC', 'power', [8, 26.5]), P('neo.g', '검정 · GND', 'ground', [8, 34.5]), P('neo.s', '노랑 · DIN', 'signal', [8, 41])]},
   ],
   wires: [
     W('ultra.g', 'ultraBoard.g', G, '초음파센서 GND를 P14 열의 검정 GND에 연결했어요.'),
