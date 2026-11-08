@@ -333,7 +333,7 @@
   <section class="card" aria-labelledby="gvsHowTitle">
     <div class="sec-head"><h2 id="gvsHowTitle">어떻게 연결하나요?</h2><span>부품 하나 = 선 3개</span></div>
     <div class="gvs-how">
-      <svg viewBox="0 0 340 260" role="img" aria-label="확장보드 P15 열의 G, V, S 세 핀을 네오픽셀의 GND, VCC, DIN에 각각 연결한 그림">
+      <svg viewBox="0 0 340 260" role="img" aria-label="확장보드 P15 열의 G, V, S 세 핀을 네오픽셀의 GND, VCC, DIN에 각각 연결한 그림. 네오픽셀은 VCC가 위, GND가 가운데라서 검정 선과 빨강 선이 엇갈린다">
   <rect x="10" y="20" width="150" height="150" rx="12" fill="#232a27"/>
   <text x="85" y="42" text-anchor="middle" font-size="13" fill="#dfe6e2">확장보드 · P15 열</text>
   <rect x="62" y="56" width="46" height="100" rx="8" fill="none" stroke="#f2b705" stroke-width="3" stroke-dasharray="6 4"/>
@@ -341,21 +341,21 @@
   <rect x="70" y="94" width="30" height="24" rx="4" fill="#df3d36"/><text x="44" y="111" text-anchor="middle" font-size="14" font-weight="800" fill="#ff8b84">V</text>
   <rect x="70" y="126" width="30" height="24" rx="4" fill="#d8a600"/><text x="44" y="143" text-anchor="middle" font-size="14" font-weight="800" fill="#ffd34d">S</text>
   <text x="85" y="186" text-anchor="middle" font-size="12" fill="#555">위에서부터 G · V · S</text>
-  <path d="M100 74 C180 74 200 74 236 74" stroke="#252b29" stroke-width="6" fill="none"/>
-  <path d="M100 106 C180 106 200 106 236 106" stroke="#df3d36" stroke-width="6" fill="none"/>
+  <path d="M100 74 C170 74 170 106 236 106" stroke="#252b29" stroke-width="6" fill="none"/>
+  <path d="M100 106 C170 106 170 74 236 74" stroke="#df3d36" stroke-width="6" fill="none"/>
   <path d="M100 138 C180 138 200 138 236 138" stroke="#d8a600" stroke-width="6" fill="none"/>
   <rect x="236" y="56" width="94" height="100" rx="10" fill="#26352f"/>
-  <text x="283" y="79" text-anchor="middle" font-size="13" font-weight="700" fill="#fff">GND</text>
-  <text x="283" y="111" text-anchor="middle" font-size="13" font-weight="700" fill="#ff8b84">VCC</text>
+  <text x="283" y="79" text-anchor="middle" font-size="13" font-weight="700" fill="#ff8b84">VCC</text>
+  <text x="283" y="111" text-anchor="middle" font-size="13" font-weight="700" fill="#fff">GND</text>
   <text x="283" y="143" text-anchor="middle" font-size="13" font-weight="700" fill="#ffd34d">DIN</text>
-  <text x="283" y="176" text-anchor="middle" font-size="12" fill="#555">네오픽셀 쪽</text>
+  <text x="283" y="176" text-anchor="middle" font-size="12" fill="#555">네오픽셀 (실제 순서)</text>
   <text x="170" y="222" text-anchor="middle" font-size="15" font-weight="800" fill="#252b29">같은 역할끼리: G→GND, V→VCC, S→신호</text>
-  <text x="170" y="244" text-anchor="middle" font-size="13" fill="#555">부품 하나에 선 3개, 보드 한 열에 같이 꽂아요</text>
+  <text x="170" y="244" text-anchor="middle" font-size="13" fill="#555">부품 쪽 순서가 달라도 글자를 보고 같은 역할끼리</text>
 </svg>
       <div>
         <p class="gvs-rule">같은 역할끼리 연결해요. G는 G, V는 V, S는 S.</p>
         <ol class="checks3">
-          <li>부품의 핀 이름을 읽어요. (GND·VCC·신호 이름)</li>
+          <li>부품의 핀 이름을 읽어요. (GND·VCC·신호 이름) 부품마다 핀 순서가 달라요. 네오픽셀은 VCC가 맨 위예요.</li>
           <li>코드에 나온 핀 번호의 열을 보드에서 찾아요. (P14, P15, S1)</li>
           <li>그 열에서 위의 검정 G, 가운데 빨강 V, 아래 노랑 S에 하나씩 꽂아요.</li>
         </ol>
@@ -534,7 +534,7 @@ const scene = {
       note: '3핀 커넥터의 갈색·빨강·주황 선의 역할을 확인해요.',
       pins: [P('servo.s', '주황 · 신호', 'signal', [86.9, 9.9]), P('servo.v', '빨강 · 전원', 'power', [89.7, 12.4]), P('servo.g', '갈색 · GND', 'ground', [92.7, 15.4])]},
     {id: 'neo', name: 'WS2812B · 6픽셀 모듈', image: 'images/pl-neopixel.webp', ratio: 1776 / 887,
-      note: '왼쪽 3핀 소켓: 위에서부터 검정 GND, 빨강 VCC, 노랑 DIN.',
+      note: '이 사진은 예시 그림이에요. 실제 모듈은 짧은 선 3개가 나와 있고, 위에서부터 빨강 VCC · 검정 GND · 노랑 DIN이에요. 색 순서가 달라도 글자를 보고 같은 역할끼리 꽂아요.',
       pins: [P('neo.g', '검정 · GND', 'ground', [5.1, 43.5]), P('neo.v', '빨강 · VCC', 'power', [5.1, 50.3]), P('neo.s', '노랑 · DIN', 'signal', [5.1, 57.5])]},
   ],
   wires: [

@@ -46,6 +46,14 @@ function silk(text,pos,width=1) {
   const m=new THREE.Mesh(new THREE.PlaneGeometry(width,width*64/canvas.width),new THREE.MeshBasicMaterial({map,transparent:true,depthWrite:false}));
   m.rotation.x=-Math.PI/2;m.position.set(...pos);world.add(m);return m;
 }
+// 보드 열 번호(P0~P15, S1~S8): 크고 굵게. 공통 코드가 쓰는 열은 노랑
+function colLabel(text,pos,used) {
+  const canvas=document.createElement('canvas');canvas.width=128;canvas.height=96;
+  const ctx=canvas.getContext('2d');ctx.fillStyle=used?'#ffd23f':'#f3f1db';ctx.font='900 '+(text.length>2?58:70)+'px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(text,64,52,124);
+  const map=new THREE.CanvasTexture(canvas);map.colorSpace=THREE.SRGBColorSpace;
+  const m=new THREE.Mesh(new THREE.PlaneGeometry(.38,.285),new THREE.MeshBasicMaterial({map,transparent:true,depthWrite:false}));
+  m.rotation.x=-Math.PI/2;m.position.set(...pos);world.add(m);return m;
+}
 function label(text,pos,width=2,color='#294658') {
   const device=pos[0]<0?'board':pos[2]<-2?'ultra':pos[2]>2?'neo':'servo';
   const palette={board:['#e2f2e9','#b7d7c6'],ultra:['#e3effb','#b9d1e8'],servo:['#fff0dc','#e7cfad'],neo:['#eee9f8','#d1c5e7']}[device];
@@ -83,13 +91,13 @@ function createModels() {
   label('Robotbit 확장보드',[-3.3,.4,-4.0],4);
   const columns=[...['P0','P1','P2','P8','P12','P13','P14','P15'].map((name,i)=>[name,-6.3+i*.38]),...Array.from({length:8},(_,i)=>['S'+(i+1),-2.5+i*.38])];
   for(const [name,x] of columns) {
-    pinLabels.push(silk(name,[x,.14,-.17],.31));
+    pinLabels.push(colLabel(name,[x,.14,-.1],['P13','P14','P15','S1'].includes(name)));
     for(const [kind,z] of [['ground',-1.8],['power',-1.15],['signal',-.5]]) {
       box(.32,.18,.32,colors[kind],world,[x,.18,z]);
       box(.07,.2,.07,0xcdb875,world,[x,.35,z]);
     }
   }
-  pinLabels.push(silk('GND',[-6.78,.14,-1.8],.5),silk('3.3V',[-6.78,.14,-1.15],.5),silk('S',[-6.78,.14,-.5],.3),silk('VM',[-2.95,.14,-1.15],.45));
+  pinLabels.push(silk('GND',[-6.82,.14,-1.8],.62),silk('3.3V',[-6.82,.14,-1.15],.62),silk('S',[-6.82,.14,-.5],.4),silk('VM',[-2.92,.14,-1.15],.52));
   for(const [prefix,x] of [['ultraBoard',-4.02],['neoBoard',-3.64],['servoBoard',-2.5]]) {
     pin(prefix+'.g',[x,.5,-1.8]);pin(prefix+'.v',[x,.5,-1.15]);
     pin(prefix+(prefix==='ultraBoard'?'.t':'.s'),[x,.5,-.5]);
@@ -158,7 +166,13 @@ function createModels() {
   // Six LED module; sockets at its input side, no invented extra LEDs.
   box(5.3,.18,1.35,0x26352f,world,[4.2,.1,3.2]);
   for(let i=0;i<6;i++) {box(.49,.12,.6,0xe9e9d9,world,[2.75+i*.66,.25,3.2]);cylinder(.13,.14,0xd3bd7c,world,[2.75+i*.66,.3,3.2]);}
-  for(const [id,z] of [['g',2.7],['v',3.2],['s',3.7]]) pin('neo.'+id,[1.9,.45,z]);
+  // 실제 모듈: 소켓에서 짧은 선 3개가 나와 있고, 위에서부터 빨강 VCC · 검정 GND · 노랑 DIN
+  box(.42,.34,1.3,0x111515,world,[1.6,.28,3.2]);
+  for(const [id,z,c] of [['v',2.75,0xdf3d36],['g',3.2,0x303734],['s',3.65,0xf0bf23]]) {
+    pin('neo.'+id,[.75,.45,z]);
+    world.add(tube(new THREE.Vector3(1.42,.3,z),new THREE.Vector3(.95,.3,z),c,.05,.045));
+  }
+  pinLabels.push(silk('VCC',[1.6,.47,2.75],.34),silk('GND',[1.6,.47,3.2],.34),silk('DIN',[1.6,.47,3.65],.34));
   label('WS2812B · 네오픽셀 6개',[4.3,.5,4.65],4);
 }
 // 다음에 꽂을 두 핀 위에 세우는 번호 표시 (1, 2)
