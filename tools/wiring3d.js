@@ -83,7 +83,7 @@ function pin(id,position) {
   // Larger invisible hit targets make the small sockets usable without changing their visual size.
   const hit=new THREE.Mesh(new THREE.SphereGeometry(.18,12,8),new THREE.MeshBasicMaterial({visible:false}));
   hit.position.copy(point); hit.userData.pin=id;world.add(hit);pinMeshes.push(hit);
-  pinViews.set(id,{halo,socket});
+  pinViews.set(id,{halo,socket,hit});
 }
 function createModels() {
   box(17,.15,11,0xdad5c6,world,[0,-.2,0]);
@@ -182,7 +182,7 @@ function marker(text) {
   g.beginPath();g.arc(64,64,56,0,Math.PI*2);g.fillStyle='#c27c00';g.fill();g.lineWidth=10;g.strokeStyle='#ffffff';g.stroke();
   g.fillStyle='#ffffff';g.font='bold 76px sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillText(text,64,70);
   const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;
-  const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:t,depthTest:false}));sp.scale.set(.75,.75,1);sp.renderOrder=10;sp.visible=false;world.add(sp);return sp;
+  const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:t,depthTest:false}));sp.scale.set(.75,.75,1);sp.renderOrder=10;sp.visible=false;sp.userData.marker=true;world.add(sp);return sp;
 }
 function makeMarkers() {
   markers=[marker('1'),marker('2')];
@@ -196,7 +196,7 @@ function updateGuide(hints,wire) {
   markers.forEach((m,i)=>{
     const id=hints[i],on=!!id&&!state.powered;m.visible=on;stems[i].visible=on;
     if(!on) return;
-    const p=positions.get(id);m.position.set(p.x,p.y+1.25,p.z);stems[i].position.set(p.x,p.y+.6,p.z);stems[i].scale.set(1,1.1,1);
+    m.userData.pin=id;stems[i].userData.pin=id;const p=positions.get(id);m.position.set(p.x,p.y+1.25,p.z);stems[i].position.set(p.x,p.y+.6,p.z);stems[i].scale.set(1,1.1,1);
   });
   if(hints.length===2&&!state.powered){
     const a=positions.get(hints[0]),b=positions.get(hints[1]);
@@ -248,6 +248,8 @@ function sync() {
   for(const [id,{halo}] of pinViews) {
     halo.visible=!state.powered&&(state.selected===id||hints.includes(id)||wired.has(id));
     halo.scale.setScalar(hints.includes(id)&&state.selected!==id?2.2:1);
+    // 반짝이는 큰 고리 안 어디를 눌러도 그 핀이 눌리도록 누르는 범위도 함께 키움
+    pinViews.get(id).hit.scale.setScalar(hints.includes(id)?2:1);
     halo.material.color.set(state.selected===id?0x287fe0:wired.has(id)?0x299866:0xf0ae00);
   }
   const signature=state.conns.join(',');
@@ -303,7 +305,12 @@ function init() {
     pointers.delete(e.pointerId);
     if(!down||dragged){if(!pointers.size)down=null;return;}
     down=null;const rect=canvas.getBoundingClientRect();pointer.set((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1);
-    raycaster.setFromCamera(pointer,camera);const hit=raycaster.intersectObjects([...pinMeshes,...powerTargets,...usbTargets],false)[0];
+    raycaster.setFromCamera(pointer,camera);
+    // 번호 표시(1·2)와 그 막대도 누를 수 있게 하고, 겹치면 핀 > 반짝이는 핀 순으로 고름
+    const guides=[...markers,...stems].filter(m=>m.visible);
+    const hits=raycaster.intersectObjects([...pinMeshes,...guides,...powerTargets,...usbTargets],false);
+    const hinted=new Set(state.hint===null?[]:[data.wires[state.hint].from,data.wires[state.hint].to]);
+    const hit=hits.find(h=>h.object.userData.pin&&hinted.has(h.object.userData.pin))||hits.find(h=>h.object.userData.pin)||hits[0];
     if(hit?.object.userData.usb)api.chooseUSB(hit.object.userData.usb);
     else if(hit?.object.userData.power)api.togglePower();
     else if(hit&&!state.verified&&!state.powered)api.activate(hit.object.userData.pin);

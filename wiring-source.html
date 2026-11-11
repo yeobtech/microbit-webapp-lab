@@ -44,7 +44,7 @@
   .stage{position:relative;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;padding:14px;min-width:640px}
   .device{background:var(--card);padding:10px;position:relative}
   .device.board{grid-column:1 / -1;max-width:720px;width:100%;justify-self:center}
-  .device.wide{grid-column:1 / -1;max-width:600px;width:100%;justify-self:center}
+  .device.wide{grid-column:1 / -1;max-width:420px;width:100%;justify-self:center}
   .device h3{margin:0 0 6px}
   .photo{position:relative;width:100%}
   .photo svg{display:block;width:100%;height:100%}
@@ -183,8 +183,50 @@
   @media (max-width:760px){
     .lower{grid-template-columns:1fr}
   }
+  /* 이렇게 해요: 화면에서 연결 → 진짜로 꽂기 */
+  .howto{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:0 0 14px;padding:0;list-style:none;counter-reset:how}
+  .howto li{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:16px;background:var(--brand-soft);font-size:17px;line-height:1.4;counter-increment:how}
+  .howto li::before{content:counter(how);flex:none;display:grid;place-items:center;width:32px;height:32px;border-radius:50%;background:var(--ink);color:#fff;font-weight:800}
+  .howto li.real{background:#ffe08a;border:3px solid #e0a800}
+  .howto li.real::before{background:#c47f00}
+  .howto b{font-weight:800}
+  .howto .demo{flex:none;position:relative;width:22px;height:22px;border-radius:50%;background:var(--sig);border:3px solid #fff;box-shadow:0 0 0 2px var(--sig);animation:pulse 1s infinite;--c:var(--sig)}
+  .ctrl-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:12px 0}
+  .ctrl-row .modes{flex:1 1 470px;margin:0}
+  .bench-notes{display:none;margin:8px 0 0;padding-left:20px;font-size:15px}
+  .bench-notes li+li{margin-top:4px}
+  @media (max-width:760px){.howto{grid-template-columns:1fr}}
+  /* 넓은 화면(서피스고 가로 이상): 보드 한 줄 + 부품 세 개 한 줄로 한 화면에 */
+  @media (min-width:1000px){
+    .stage{align-items:start;padding:12px;gap:12px}
+    .device{padding:8px 10px}
+    .device h3{font-size:15px;margin:0 0 4px}
+    .device.board{max-width:880px}
+    .device.wide{grid-column:auto;max-width:none}
+    .device:not(.board) .photo{--maxh:180px}
+    .photo{width:min(100%,calc(var(--maxh,9999px) * var(--ar,1)));margin:0 auto}
+    .device .names,.device .dnote,.legend .chips-tip{display:none}
+    .bench-notes{display:block}
+    .next-card{display:flex;flex-wrap:wrap;align-items:center;column-gap:16px;row-gap:2px;padding:8px 16px;margin:6px 0}
+    .status{min-height:0;padding:10px 14px;margin-bottom:6px}
+    #status{scroll-margin-top:80px}
+    .next-card .nc-why{flex-basis:100%}
+  }
+  /* 진짜로 꽂기 팝업 */
+  dialog.real-dlg{border:0;border-radius:24px;padding:28px 32px 24px;width:min(640px,92vw);background:var(--card);color:var(--ink);text-align:center;box-shadow:0 20px 60px #0005}
+  dialog.real-dlg::backdrop{background:#0008}
+  .real-dlg .rd-x{position:absolute;top:12px;right:12px;width:44px;height:44px;border-radius:50%;padding:0;font-size:28px;line-height:1;background:var(--bg);color:var(--ink)}
+  .real-dlg .rd-step{margin:0;font-weight:700;color:var(--muted)}
+  .real-dlg h2{margin:6px 0 18px;font-size:28px}
+  .real-dlg .rd-wire{display:grid;grid-template-columns:1fr 60px 1fr;align-items:center;gap:8px}
+  .real-dlg .rd-pin{padding:14px 10px;border-radius:16px;background:var(--brand-soft);font-size:20px;font-weight:800;line-height:1.35}
+  .real-dlg .rd-line{height:8px;border-radius:4px;background:var(--wire,#333);box-shadow:0 0 0 2px #fff,0 0 0 3px #0002}
+  .real-dlg .rd-color{margin:14px 0 4px;font-size:18px;font-weight:800}
+  .real-dlg .rd-why{margin:0 0 18px;color:var(--muted)}
+  .real-dlg .rd-done{min-width:200px;font-size:18px}
+  @media (max-width:520px){.real-dlg .rd-wire{grid-template-columns:1fr}.real-dlg .rd-line{width:8px;height:40px;justify-self:center}}
   @media (prefers-reduced-motion:reduce){
-    .pin.hint{animation:none}
+    .pin.hint,.howto .demo{animation:none}
   }
 }
 </style>
@@ -396,12 +438,9 @@
 <div data-step="5" hidden>
   <section class="head">
     <h1>초음파센서 · 서보모터 · 네오픽셀을 한 보드에</h1>
-    <p>실제로 꽂기 전에 사진에서 먼저 연결해 봅니다. 연결할 두 핀을 차례로 누르면 선이 생깁니다. 3D는 다 연결한 뒤 위치를 다시 확인할 때 써요.</p>
-  </section>
-
-  <section class="card">
-    <strong>공통 코드에서 쓰는 핀</strong>
-    <ul class="pins-to-find" style="margin-top:8px">
+    <p>화면에서 먼저 선을 연결해 보고, 그 모습 그대로 진짜 점퍼선을 꽂아요. 3D는 위치가 헷갈릴 때 돌려 보는 용도예요.</p>
+    <p style="margin-top:12px"><strong>공통 코드에서 쓰는 핀</strong></p>
+    <ul class="pins-to-find" style="margin-top:6px">
       <li>Trig <b>P14</b> <small>초음파 보내기</small></li>
       <li>Echo <b>P13</b> <small>초음파 받기</small></li>
       <li><b>S1</b> <small>서보모터</small></li>
@@ -410,22 +449,31 @@
   </section>
 
   <section class="card" aria-label="실물 사진으로 점퍼선 연결 연습">
+    <ol class="howto" id="howto" aria-label="이렇게 해요">
+      <li><span class="demo" aria-hidden="true"></span><span><b>반짝이는 동그라미 2개</b>를 찾아요.</span></li>
+      <li><span>하나를 누르고 다른 하나를 누르면 <b>화면에 선</b>이 생겨요.</span></li>
+      <li class="real"><span>그 선을 보고 <b>진짜 점퍼선을 똑같이 꽂아요.</b> 그다음 반짝이는 곳으로!</span></li>
+    </ol>
     <div class="toolbar">
       <div class="explain" id="modeExplain"></div>
       <span class="count" id="count">0<span> / 10개 연결</span></span>
     </div>
-    <div class="modes" role="group" aria-label="연습 단계">
-      <button type="button" data-mode="guide" aria-pressed="true">1. 따라 하기</button>
-      <button type="button" data-mode="labels" aria-pressed="false">2. 이름만 보기</button>
-      <button type="button" data-mode="solo" aria-pressed="false">3. 혼자 연결</button>
-    </div>
-    <div class="toolbar">
+    <div class="ctrl-row">
+      <div class="modes" role="group" aria-label="연습 단계">
+        <button type="button" data-mode="guide" aria-pressed="true">1. 따라 하기</button>
+        <button type="button" data-mode="labels" aria-pressed="false">2. 이름만 보기</button>
+        <button type="button" data-mode="solo" aria-pressed="false">3. 혼자 연결</button>
+      </div>
       <button type="button" class="btn ghost" id="hintBtn">다음 연결 힌트</button>
       <label>사진 크기 <select id="zoom"><option value="1">기본</option><option value="1.4">크게</option><option value="1.8">더 크게</option></select></label>
     </div>
     <div class="status" id="status" data-tone="normal"><output aria-live="polite" id="msg"></output><button type="button" class="btn ghost" id="cancelBtn" hidden>선택 취소</button></div>
     <div class="next-card" id="nextCard" aria-live="polite" hidden></div>
-    <p class="legend">작은 핀은 사진 아래 이름표를 눌러도 연결됩니다.<i style="background:var(--gnd)"></i>GND <i style="background:var(--pwr)"></i>전원 <i style="background:var(--sig)"></i>신호 <i style="background:var(--sig2)"></i>Echo 신호</p>
+    <div class="scroll" tabindex="0" aria-label="배선 작업대. 확대하면 좌우로 밀 수 있습니다.">
+      <div class="stage" id="stage"><svg class="wires" id="wires" aria-hidden="true"></svg></div>
+    </div>
+    <p class="legend"><span class="chips-tip">작은 핀은 사진 아래 이름표를 눌러도 연결됩니다.</span><i style="background:var(--gnd)"></i>GND <i style="background:var(--pwr)"></i>전원 <i style="background:var(--sig)"></i>신호 <i style="background:var(--sig2)"></i>Echo 신호</p>
+    <ul class="bench-notes" id="benchNotes"></ul>
     <div class="w3-toolbar" role="group" aria-label="배선 작업대 보기">
       <button type="button" class="btn" id="w3Toggle" aria-pressed="false">3D로 확인하기</button>
       <button type="button" class="btn ghost" id="w3Next" disabled>다음 연결로 확대</button>
@@ -441,9 +489,6 @@
       <p class="dnote">드래그로 회전 · 휠 또는 두 손가락으로 확대 · 핀을 클릭하거나 아래 이름표로 연결합니다.</p>
       <p class="dnote">실물 사진을 참고한 학습 모형입니다. 핀 간격은 선택하기 쉽게 조정했습니다. 전원·표시등은 가상 동작이며 실제 장치에 명령을 보내지 않습니다.</p>
       <div id="w3Pins" aria-label="3D 부품별 연결 핀"></div>
-    </div>
-    <div class="scroll" tabindex="0" aria-label="배선 작업대. 확대하면 좌우로 밀 수 있습니다.">
-      <div class="stage" id="stage"><svg class="wires" id="wires" aria-hidden="true"></svg></div>
     </div>
     <div class="lower">
       <div class="conns"><h3>내가 꽂은 선</h3><ul id="conns"></ul><p class="dnote" id="noConns">선을 연결하면 여기에 기록됩니다.</p></div>
@@ -482,6 +527,15 @@
     <button type="button" class="btn" id="nextStep">다음 →</button>
   </div>
 
+  <dialog class="real-dlg" id="realDlg" aria-labelledby="realTitle">
+    <button type="button" class="rd-x" id="realClose" aria-label="닫기">×</button>
+    <p class="rd-step" id="realStep"></p>
+    <h2 id="realTitle">이제 진짜 점퍼선을 꽂아요</h2>
+    <div class="rd-wire"><span class="rd-pin" id="realFrom"></span><span class="rd-line" id="realLine" aria-hidden="true"></span><span class="rd-pin" id="realTo"></span></div>
+    <p class="rd-color" id="realColor"></p>
+    <p class="rd-why" id="realWhy"></p>
+    <button type="button" class="btn rd-done" id="realDone">다 꽂았어요</button>
+  </dialog>
   <dialog class="zoom" id="zoomDlg"><div class="zoom-head"><strong id="zoomTitle"></strong><button type="button" class="btn ghost" id="zoomClose">닫기</button></div><img id="zoomImg" alt=""><p class="dnote" id="zoomCredit"></p></dialog>
 
   <section class="card credits">
@@ -515,7 +569,7 @@ const y = {ground: 21.7, power: 25.3, signal: 29.7};
 const x = {P13: 28.6, P14: 32, P15: 35.2, S1: 60.6};
 const scene = {
   devices: [
-    {id: 'board', cls: 'board', name: '마이크로비트 확장보드 (Robotbit)', image: 'images/pl-board.webp', ratio: 502 / 387,
+    {id: 'board', cls: 'board', name: '마이크로비트 확장보드 (Robotbit) · 핀 부분', image: 'images/pl-board.webp', crop: [0, 12, 100, 26], ratio: 502 / 387,
       note: '코드에 나온 P14·P13·P15·S1을 모두 찾아 세 부품을 함께 연결해요. 왼쪽 P핀 줄의 빨간 줄은 3.3V, 오른쪽 S1~S8 줄의 빨간 줄은 VM(배터리 전원)입니다.',
       pins: [
         P('ultraBoard.g', 'P14 열의 GND', 'ground', [x.P14, y.ground]),
@@ -529,12 +583,12 @@ const scene = {
         P('servoBoard.v', 'S1 열의 VM', 'power', [x.S1, y.power]),
         P('servoBoard.s', 'S1 신호 · 서보 제어', 'signal', [x.S1, y.signal]),
       ]},
-    {id: 'ultra', name: 'HC-SR04 · 초음파센서', image: 'images/pl-ultrasonic.webp', crop: [23, 28, 53, 46], ratio: 2555 / 1703,
+    {id: 'ultra', name: 'HC-SR04 · 초음파센서', image: 'images/pl-ultrasonic.webp', crop: [40, 47, 20, 27], ratio: 2555 / 1703,
       pins: [P('ultra.v', 'VCC', 'power', [47.2, 70]), P('ultra.t', 'Trig', 'signal', [49.7, 70]), P('ultra.e', 'Echo', 'signal', [52.2, 70]), P('ultra.g', 'GND', 'ground', [54.8, 70])]},
-    {id: 'servo', name: 'SG90 · 서보모터', image: 'images/pl-servo.webp', ratio: 1080 / 990,
+    {id: 'servo', name: 'SG90 · 서보모터', image: 'images/pl-servo.webp', crop: [68, 0, 32, 32], ratio: 1080 / 990,
       note: '3핀 커넥터의 갈색·빨강·주황 선의 역할을 확인해요.',
       pins: [P('servo.s', '주황 · 신호', 'signal', [86.9, 9.9]), P('servo.v', '빨강 · 전원', 'power', [89.7, 12.4]), P('servo.g', '갈색 · GND', 'ground', [92.7, 15.4])]},
-    {id: 'neo', cls: 'wide', name: 'WS2812B · 네오픽셀 띠 (선 끝 확대)', image: 'images/pl-neopixel-real.webp', crop: [0, 10, 32, 42], ratio: 1452 / 240,
+    {id: 'neo', cls: 'wide', name: 'WS2812B · 네오픽셀 띠 (선 끝 확대)', image: 'images/pl-neopixel-real.webp', crop: [0, 12, 17, 42], ratio: 1452 / 240,
       note: '수업에서 쓰는 실물 네오픽셀 띠의 선 끝이에요. 선 3개가 위에서부터 빨강 VCC · 검정 GND · 노랑 DIN 순서예요. 검정이 가운데라서 보드의 G·V·S 순서와 달라요. 색을 보고 같은 역할끼리 꽂아요.',
       pins: [P('neo.v', '빨강 · VCC', 'power', [8, 26.5]), P('neo.g', '검정 · GND', 'ground', [8, 34.5]), P('neo.s', '노랑 · DIN', 'signal', [8, 41])]},
   ],
@@ -574,7 +628,9 @@ function build() {
     const crop = d.crop || [0, 0, 100, 100];
     const photo = document.createElement('div');
     photo.className = 'photo';
-    photo.style.aspectRatio = String((crop[2] / crop[3]) * (d.ratio || 1));
+    const ar = (crop[2] / crop[3]) * (d.ratio || 1);
+    photo.style.aspectRatio = String(ar);
+    photo.style.setProperty('--ar', ar.toFixed(4));
     photo.innerHTML = `<svg viewBox="${crop.join(' ')}" preserveAspectRatio="none" role="img" aria-label="${d.name} 사진"><image href="${d.image}" x="0" y="0" width="100" height="100" preserveAspectRatio="none"/></svg>`;
     const names = document.createElement('div');
     names.className = 'names';
@@ -598,6 +654,14 @@ function build() {
     if (d.note) { const n = document.createElement('p'); n.className = 'dnote'; n.textContent = d.note; art.append(n); }
     stage.append(art);
   }
+  // 넓은 화면에서는 부품별 설명을 작업대 아래 한곳에 모아 보여 줌
+  $('benchNotes').replaceChildren(...scene.devices.filter(d => d.note).map(d => {
+    const li = document.createElement('li');
+    li.innerHTML = '<b></b> ';
+    li.querySelector('b').textContent = d.name.split(' (')[0].split(' · ').pop();
+    li.append(d.note);
+    return li;
+  }));
   stage.querySelectorAll('[data-pin]').forEach(b => b.addEventListener('click', () => activate(b.dataset.pin)));
   render();
 }
@@ -653,6 +717,7 @@ function render() {
   window.dispatchEvent(new Event('wiring-state'));
 }
 
+const partName = id => ({ultra: '초음파센서', servo: '서보모터', neo: '네오픽셀'})[id.split('.')[0]] || '확장보드';
 const KIND = {ground: ['검정', 'G끼리 · 검정 줄'], power: ['빨강', 'V끼리 · 빨강 줄'], signal: ['노랑', 'S끼리 · 노랑 줄']};
 function renderNext() {
   const card = $('nextCard');
@@ -664,10 +729,9 @@ function renderNext() {
   card.querySelector('i').style.background = w.color;
   card.querySelector('.nc-top span').textContent = `다음에 꽂을 곳 ${st.conns.length + 1} / ${scene.wires.length} · ${kind[0]} 선 (${kind[1]})`;
   const [p1, p2] = card.querySelectorAll('.nc-pair span');
-  const part = id => ({ultra: '초음파센서', servo: '서보모터', neo: '네오픽셀'})[id.split('.')[0]] || '확장보드';
-  p1.textContent = `① ${part(w.from)} ${a.label}`;
-  p2.textContent = `② ${part(w.to)} ${b.label}`;
-  card.querySelector('.nc-why').textContent = st.mode === 'guide' ? '사진(또는 3D)에서 빛나는 두 핀이에요. ①을 누른 다음 ②를 누르세요.' : '방금 고른 핀의 짝이에요. ①을 누른 다음 ②를 누르세요.';
+  p1.textContent = `① ${partName(w.from)} ${a.label}`;
+  p2.textContent = `② ${partName(w.to)} ${b.label}`;
+  card.querySelector('.nc-why').textContent = (st.mode === 'guide' ? '반짝이는 ①을 누르고 ②를 누르면 화면에 선이 생겨요.' : '방금 고른 핀의 짝이에요. ①을 누른 다음 ②를 누르세요.') + ' 그다음 진짜 점퍼선도 똑같이 꽂아요.';
 }
 function say(text, tone) { $('msg').textContent = text; $('status').dataset.tone = tone || 'normal'; }
 
@@ -722,9 +786,30 @@ function connect(a, b) {
   st.conns.push(index); st.selected = null;
   st.hint = st.mode === 'guide' ? nextUnwired(st.conns) : null;
   const done = st.conns.length === scene.wires.length;
-  say(`연결했어요. ${scene.wires[index].why}${done ? ' 이제 아래 세 가지 점검을 직접 확인해요.' : st.mode === 'guide' ? ' 다음 두 핀이 빛나고 있어요.' : ''}`);
+  say(`화면에서 연결했어요 → 이제 진짜 점퍼선을 똑같이 꽂아요. ${scene.wires[index].why}${done ? ' 이제 아래 세 가지 점검을 직접 확인해요.' : st.mode === 'guide' ? ' 다 꽂았으면 다음 반짝이는 두 곳으로!' : ''}`, 'success');
   render();
+  showReal(index, done);
 }
+/* 화면에서 한 선을 연결할 때마다, 진짜로 꽂을 곳을 가운데 팝업으로 보여 줌 */
+function showReal(index, done) {
+  const w = scene.wires[index], a = pinById(w.from), b = pinById(w.to), dlg = $('realDlg');
+  const kind = w.color === B ? ['파랑', 'Echo 신호 · 노랑 줄(P13)'] : KIND[a.kind];
+  $('realStep').textContent = `화면 연결 ${st.conns.length} / ${scene.wires.length} 완료`;
+  $('realFrom').textContent = `① ${partName(w.from)} ${a.label}`;
+  $('realTo').textContent = `② ${partName(w.to)} ${b.label}`;
+  $('realLine').style.setProperty('--wire', w.color);
+  $('realColor').textContent = `${kind[0]} 점퍼선 · ${kind[1]}`;
+  $('realWhy').textContent = done ? '10개를 모두 꽂았으면, 아래의 전원 켜기 전 점검을 해요.' : '진짜 보드에도 똑같이 꽂고 나서 다음으로 가요.';
+  $('realDone').textContent = done ? '다 꽂았어요 · 점검하러 가기' : '다 꽂았어요';
+  if (!dlg.open && dlg.showModal) dlg.showModal();
+  $('realDone').focus();
+}
+$('realClose').addEventListener('click', () => $('realDlg').close());
+$('realDone').addEventListener('click', () => {
+  $('realDlg').close();
+  if (st.conns.length === scene.wires.length) $('preflight').scrollIntoView({block: 'center', behavior: 'smooth'});
+});
+$('realDlg').addEventListener('click', e => { if (e.target === $('realDlg')) $('realDlg').close(); });
 function activate(id) {
   if (st.usbConnected) { say('배선을 바꾸려면 USB를 먼저 빼 주세요.'); return; }
   if (st.powered) { say('배선을 바꾸려면 먼저 배터리 전원을 꺼 주세요.'); return; }
@@ -742,13 +827,13 @@ function reset(text) {
   Object.assign(st, {conns: [], selected: null, verified: false, powered: false, usbConnected: false, hint: st.mode === 'guide' ? 0 : null});
   $('usbStatus').textContent = 'USB 미연결 · PC 통신은 마이크로비트의 USB 단자를 사용합니다.';
   st.checks.clear();
-  say(text || (st.mode === 'guide' ? '빛나는 두 핀을 연결해 보세요. 검정 GND부터 시작해요.' : '선을 모두 정리했어요. 다시 연결해 보세요.'));
+  say(text || (st.mode === 'guide' ? '반짝이는 두 곳을 차례로 눌러 보세요. 검정 GND부터 시작해요.' : '선을 모두 정리했어요. 다시 연결해 보세요.'));
   render();
 }
 
 document.querySelectorAll('.modes button').forEach(b => b.addEventListener('click', () => {
   st.mode = b.dataset.mode;
-  reset({guide: '따라 하기: 빛나는 두 핀을 연결해요.', labels: '이름만 보기: 핀 이름을 읽고 도움 없이 연결해요.', solo: '혼자 연결: 핀 이름표 없이 위치와 색을 보고 연결해요.'}[st.mode]);
+  reset({guide: '따라 하기: 반짝이는 두 곳을 차례로 눌러 연결해요.', labels: '이름만 보기: 핀 이름을 읽고 도움 없이 연결해요.', solo: '혼자 연결: 핀 이름표 없이 위치와 색을 보고 연결해요.'}[st.mode]);
 }));
 $('hintBtn').addEventListener('click', () => {
   const i = nextUnwired(st.conns);
@@ -782,7 +867,7 @@ $('zoom').addEventListener('change', e => { $('stage').style.width = (Number(e.t
 new ResizeObserver(() => requestAnimationFrame(drawWires)).observe($('stage'));
 $('sceneNote').textContent = scene.note;
 build();
-say('빛나는 두 핀을 연결해 보세요. 검정 GND부터 시작해요.');
+say('반짝이는 두 곳을 차례로 눌러 보세요. 검정 GND부터 시작해요.');
 
 /* ===== 1~4단계: 핀랩 lesson-core.tsx의 CableLesson, ConnectionGuide, Boards, PinPractice를 옮김 ===== */
 const CREDIT = {

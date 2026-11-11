@@ -4,6 +4,8 @@ const path=require('node:path');
 const url=pathToFileURL(path.resolve(__dirname,'../wiring.html')).href+'#step5';
 async function open(page){await page.route('https://**/*',r=>r.abort());await page.goto(url);await page.locator('#w3Toggle').click();}
 const pin=(page,id)=>page.locator(`[data-w3-pin="${id}"]`);
+// 선을 연결할 때마다 뜨는 「진짜로 꽂기」 팝업은 다음 동작 전에 닫음
+test.beforeEach(async({page})=>{await page.addLocatorHandler(page.locator('#realDlg[open]'),async()=>{await page.locator('#realClose').click();});});
 test('3D shares wrong-pair feedback, all ten wires, removal and verification with photos',async({page})=>{
   const errors=[];page.on('pageerror',e=>errors.push(e.message));await open(page);
   await expect(page.locator('#w3Viewport canvas')).toBeVisible();
@@ -71,7 +73,7 @@ test('pins can be selected on the 3D canvas and dragging does not connect',async
 test('unsupported WebGL preserves photo wiring',async({page})=>{
   await page.addInitScript(()=>{const original=HTMLCanvasElement.prototype.getContext;HTMLCanvasElement.prototype.getContext=function(type,...args){return type.includes('webgl')?null:original.call(this,type,...args);};});
   await open(page);await expect(page.locator('#stage')).toBeVisible();await expect(page.locator('#w3Help')).toContainText('사진 작업대를 유지');
-  await page.locator('#stage [data-pin="ultra.g"]').last().click();await page.locator('#stage [data-pin="ultraBoard.g"]').last().click();
+  await page.locator('#stage [data-pin="ultra.g"]').first().click();await page.locator('#stage [data-pin="ultraBoard.g"]').first().click();
   await expect(page.locator('#conns li')).toHaveCount(1);
 });
 test('battery switch locks editing, survives view changes, and resets safely',async({page})=>{
@@ -136,4 +138,17 @@ test('USB ports reject charging port and connect only after wiring checks; unplu
   await page.locator('#usbDisconnect').click();
   await expect(page.locator('#verifyBtn')).toBeDisabled();
   await expect(page.locator('#stage [data-pin="neo.g"]').last()).toBeEnabled();
+});
+test('clicking the edge of a glowing ring (not its centre) still connects the hinted pins',async({page})=>{
+  await open(page);await page.locator('#w3Top').click();
+  const canvas=page.locator('#w3Viewport canvas');
+  await canvas.evaluate(el=>window.scrollTo(0,scrollY+el.getBoundingClientRect().top-150));
+  const rect=await canvas.boundingBox();
+  const project=(x,y,z)=>{const scale=rect.height/(2*(16-y)*Math.tan(Math.PI/8));return {x:rect.x+rect.width/2+x*scale,y:rect.y+rect.height/2+z*scale};};
+  // 핀 가운데에서 0.28만큼 벗어난 곳: 예전 누르는 범위(0.18) 밖, 반짝이는 고리 안
+  const a=project(5.05,.48,-2.3+.28);await page.mouse.click(a.x,a.y);
+  await expect(pin(page,'ultra.g')).toHaveAttribute('aria-pressed','true');
+  const b=project(-4.02,.5,-1.8-.28);await page.mouse.click(b.x,b.y);
+  await expect(page.locator('#conns li')).toHaveCount(1);
+  expect(await page.evaluate(()=>wiringLab.getState().usbConnected)).toBe(false);
 });
